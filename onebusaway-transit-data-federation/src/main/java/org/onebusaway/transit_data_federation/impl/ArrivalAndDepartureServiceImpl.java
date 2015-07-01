@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
+ * Copyright (C) 2015 University of South Florida
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +31,7 @@ import org.onebusaway.collections.Min;
 import org.onebusaway.collections.tuple.Pair;
 import org.onebusaway.collections.tuple.Tuples;
 import org.onebusaway.gtfs.model.AgencyAndId;
+import org.onebusaway.realtime.api.TimepointPredictionRecord;
 import org.onebusaway.transit_data.model.TimeIntervalBean;
 import org.onebusaway.transit_data_federation.model.TargetTime;
 import org.onebusaway.transit_data_federation.services.ArrivalAndDeparturePairQuery;
@@ -538,7 +540,7 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
       applyBlockLocationToInstance(instance, location,
           targetTime.getTargetTime());
 
-      if (isArrivalAndDepartureBeanInRange(instance, fromTime, toTime))
+      if (isArrivalAndDepartureBeanInRange(instance, fromTime, toTime) && instance.isVisable())
         results.add(instance);
     }
 
@@ -638,12 +640,50 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
     instance.setBlockLocation(blockLocation);
 
     if (blockLocation.isScheduleDeviationSet()
-        || blockLocation.areScheduleDeviationsSet()) {
+	        || blockLocation.areScheduleDeviationsSet()) {
+    	if (checkTimepointPredictions(blockLocation.getTimepointPredictions(), instance.getBlockTrip().getStopTimes(),
+    			instance.getStop().getId())) {
+    		// if there are time point predictions calculate best schedule deviation
+    		int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
+    		setPredictedTimesFromScheduleDeviation(instance, blockLocation,
+    				scheduleDeviation, targetTime);
+    	} else if (blockLocation.getTimepointPredictions() != null && !blockLocation.getTimepointPredictions().isEmpty()){
+    		// if the bus passed the stop then don't show predictions
+    		instance.setVisable(false);
+    	} else {
+    		// if there are no time point predictions use default schedule deviation
+        	setPredictedTimesFromScheduleDeviation(instance, blockLocation,
+       	         getDefaultScheduleDeviation(blockLocation), targetTime);
+       }
+	}
+  }
 
-      int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
-      setPredictedTimesFromScheduleDeviation(instance, blockLocation,
-          scheduleDeviation, targetTime);
-    }
+  /**
+   * This method checks time point predictions.
+   * @param timepointPredictions for the block
+   * @param stopTimelist stop times from gtfs data
+   * @param stopId current stop id
+   * @return If the bus passes the current stop returns false else returns true
+   */
+  private boolean checkTimepointPredictions(
+		List<TimepointPredictionRecord> timepointPredictions, List<BlockStopTimeEntry> stopTimelist,
+		AgencyAndId stopId) {
+	  
+	  if (timepointPredictions != null && !timepointPredictions.isEmpty()) {
+		  for (BlockStopTimeEntry bste : stopTimelist) {
+			  
+			  if (bste.getStopTime().getStop().getId().
+					  equals(timepointPredictions.get(0).getTimepointId())) {
+				return true;
+			  }
+			  
+			  if (bste.getStopTime().getStop().getId().
+					  equals(stopId)) {
+				return false;
+			  }
+		  }
+	  }
+	return false;
   }
 
   private int getBestScheduleDeviation(ArrivalAndDepartureInstance instance,
@@ -662,6 +702,14 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
     } else {
       return 0;
     }
+  }
+
+  private int getDefaultScheduleDeviation(BlockLocation blockLocation) {
+	    if (blockLocation.isScheduleDeviationSet()) {
+	      return (int) blockLocation.getScheduleDeviation();
+	    } else {
+	      return 0;
+	    }
   }
 
   private void setPredictedTimesFromScheduleDeviation(

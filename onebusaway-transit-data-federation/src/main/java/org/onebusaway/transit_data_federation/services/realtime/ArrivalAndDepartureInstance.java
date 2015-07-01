@@ -1,6 +1,7 @@
 /**
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
  * Copyright (C) 2011 Google, Inc.
+ * Copyright (C) 2015 University of South Florida
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +53,8 @@ public class ArrivalAndDepartureInstance {
   private long predictedDepartureTime;
 
   private TimeIntervalBean predictedDepartureInterval;
+  
+  private boolean visable = true;
 
   public ArrivalAndDepartureInstance(StopTimeInstance stopTimeInstance,
       ArrivalAndDepartureTime scheduledTime) {
@@ -208,5 +211,13 @@ public class ArrivalAndDepartureInstance {
         + getBlockTrip().getBlockConfiguration().getBlock().getId());
     b.append(")");
     return b.toString();
+  }
+
+  public boolean isVisable() {
+	return visable;
+  }
+
+  public void setVisable(boolean visable) {
+	this.visable = visable;
   }
 }
