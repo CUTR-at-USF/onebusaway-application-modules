@@ -54,7 +54,7 @@ public class ArrivalAndDepartureInstance {
 
   private TimeIntervalBean predictedDepartureInterval;
   
-  private boolean visable = true;
+  private boolean visible = true;
 
   public ArrivalAndDepartureInstance(StopTimeInstance stopTimeInstance,
       ArrivalAndDepartureTime scheduledTime) {
@@ -213,11 +213,11 @@ public class ArrivalAndDepartureInstance {
     return b.toString();
   }
 
-  public boolean isVisable() {
-	return visable;
+  public boolean isVisible() {
+	return visible;
   }
 
-  public void setVisable(boolean visable) {
-	this.visable = visable;
+  public void setVisible(boolean visible) {
+	this.visible = visible;
   }
 }

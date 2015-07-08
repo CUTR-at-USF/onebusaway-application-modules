@@ -540,7 +540,7 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
       applyBlockLocationToInstance(instance, location,
           targetTime.getTargetTime());
 
-      if (isArrivalAndDepartureBeanInRange(instance, fromTime, toTime) && instance.isVisable())
+      if (isArrivalAndDepartureBeanInRange(instance, fromTime, toTime) && instance.isVisible())
         results.add(instance);
     }
 
@@ -643,13 +643,22 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 	        || blockLocation.areScheduleDeviationsSet()) {
     	if (checkTimepointPredictions(blockLocation.getTimepointPredictions(), instance.getBlockTrip().getStopTimes(),
     			instance.getStop().getId())) {
-    		// if there are time point predictions calculate best schedule deviation
-    		int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
-    		setPredictedTimesFromScheduleDeviation(instance, blockLocation,
-    				scheduleDeviation, targetTime);
+    		long predictedArrivalTime = findPredictedArrivalTime(blockLocation.getTimepointPredictions(), 
+    				instance.getStop().getId());
+    		if (predictedArrivalTime == -1) {
+    			// if there are time point predictions for upstream of the bus stop 
+    			// and the predictions doesn't contain the bus stop 
+    			// then calculate best schedule deviation
+    			int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
+    			setPredictedTimesFromScheduleDeviation(instance, blockLocation,
+    					scheduleDeviation, targetTime);
+			} else {
+				// If there is exact time point prediction for the bus stop use it
+				setPredictedTimesFromAbsoluteArrivalTimes(instance, predictedArrivalTime, blockLocation, targetTime);
+			}
     	} else if (blockLocation.getTimepointPredictions() != null && !blockLocation.getTimepointPredictions().isEmpty()){
     		// if the bus passed the stop then don't show predictions
-    		instance.setVisable(false);
+    		instance.setVisible(false);
     	} else {
     		// if there are no time point predictions use default schedule deviation
         	setPredictedTimesFromScheduleDeviation(instance, blockLocation,
@@ -659,31 +668,66 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   }
 
   /**
+   * Sets absolute arrival times from gtfs-rt
+   * @param instance
+   * @param predictedArrivalTime
+   * @param blockLocation
+   * @param targetTime
+   */
+  private void setPredictedTimesFromAbsoluteArrivalTimes(
+		ArrivalAndDepartureInstance instance, long predictedArrivalTime, BlockLocation blockLocation, long targetTime) {
+
+	    setPredictedArrivalTimeForInstance(instance, predictedArrivalTime);
+	    setPredictedDepartureTimeForInstance(instance, predictedArrivalTime);
+
+	    TimeIntervalBean predictedDepartureTimeInterval = computePredictedDepartureTimeInterval(
+	        instance, blockLocation, targetTime);
+	    instance.setPredictedDepartureInterval(predictedDepartureTimeInterval);
+  }
+
+  /**
+   * Find absolute time point prediction for given stop id
+   * @param timepointPredictions
+   * @param stopId
+   * @return -1 if there is no time point prediction for stop 
+   */
+  private long findPredictedArrivalTime(
+	List<TimepointPredictionRecord> timepointPredictions, AgencyAndId stopId) {
+	for (TimepointPredictionRecord tpr : timepointPredictions) {
+	  if (stopId.equals(tpr.getTimepointId())) {
+		  return tpr.getTimepointPredictedTime();
+	  }
+	}
+	return -1;
+  }
+
+/**
    * This method checks time point predictions.
    * @param timepointPredictions for the block
-   * @param stopTimelist stop times from gtfs data
+   * @param stopTimelist stop_times from static gtfs data
    * @param stopId current stop id
-   * @return If the bus passes the current stop returns false else returns true
+   * @return false if the bus is in downstream of the current stop, otherwise returns true
    */
   private boolean checkTimepointPredictions(
-		List<TimepointPredictionRecord> timepointPredictions, List<BlockStopTimeEntry> stopTimelist,
-		AgencyAndId stopId) {
+	  List<TimepointPredictionRecord> timepointPredictions, List<BlockStopTimeEntry> stopTimelist,
+	  AgencyAndId stopId) {
+	  // First stop_time_update from gtfs-rt
+	  AgencyAndId timepointId = timepointPredictions.get(0).getTimepointId();
 	  
 	  if (timepointPredictions != null && !timepointPredictions.isEmpty()) {
 		  for (BlockStopTimeEntry bste : stopTimelist) {
-			  
-			  if (bste.getStopTime().getStop().getId().
-					  equals(timepointPredictions.get(0).getTimepointId())) {
+			AgencyAndId stopTimeId = bste.getStopTime().getStop().getId();
+			if (stopTimeId.equals(timepointId)) {
+				// Bus haven't visited the stop yet
 				return true;
-			  }
-			  
-			  if (bste.getStopTime().getStop().getId().
-					  equals(stopId)) {
+			}
+			if (stopTimeId.equals(stopId)) {
+				// Bus already passed the stop   
 				return false;
-			  }
+			}
 		  }
 	  }
-	return false;
+	  return false;
   }
 
   private int getBestScheduleDeviation(ArrivalAndDepartureInstance instance,
