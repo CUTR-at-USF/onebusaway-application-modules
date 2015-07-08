@@ -641,25 +641,29 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 
     if (blockLocation.isScheduleDeviationSet()
 	        || blockLocation.areScheduleDeviationsSet()) {
-    	if (checkTimepointPredictions(blockLocation.getTimepointPredictions(), instance.getBlockTrip().getStopTimes(),
-    			instance.getStop().getId())) {
-    		long predictedArrivalTime = findPredictedArrivalTime(blockLocation.getTimepointPredictions(), 
-    				instance.getStop().getId());
-    		if (predictedArrivalTime == -1) {
-    			// If there are time point predictions upstream of the bus stop and the predictions do not contain the 
-				// bus stop then calculate best schedule deviation (we still need to interpolate the downstream arrival time)
+			
+		List<TimepointPredictionRecord> tpList = blockLocation.getTimepointPredictions();
+		AgencyAndId stopId = instance.getStop().getId();
+		
+    	if (checkTimepointPredictions(tpList, instance.getBlockTrip().getStopTimes(), stopId)) {
+			// Real-time predictions are either upstream of or include the current stopId
+    		Long predictedArrivalTime = findPredictedArrivalTime(tpList, stopId);
+						
+    		if (predictedArrivalTime != null) {
+    			// There is exact absolute time point prediction for the stop, so use it
+				setPredictedTimesFromAbsoluteArrivalTimes(instance, predictedArrivalTime, blockLocation, targetTime);
+			} else {
+				// There are time point predictions upstream of the stop and the predictions do not contain the 
+				// stop, so calculate best schedule deviation (we still need to interpolate the downstream arrival times)
     			int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
     			setPredictedTimesFromScheduleDeviation(instance, blockLocation,
     					scheduleDeviation, targetTime);
-			} else {
-				// If there is exact absolute time point prediction for the bus stop, use it
-				setPredictedTimesFromAbsoluteArrivalTimes(instance, predictedArrivalTime, blockLocation, targetTime);
 			}
-    	} else if (blockLocation.getTimepointPredictions() != null && !blockLocation.getTimepointPredictions().isEmpty()){
-    		// If the bus passed the stop, then don't show arrival info
+    	} else if (tpList != null && !tpList.isEmpty()){
+    		// The vehicle passed the stop (all predictions are downstream of the stopId), so don't show arrival info
     		instance.setVisible(false);
     	} else {
-    		// If there are no time point predictions use default schedule deviation
+    		// There are no time point predictions, so use default schedule deviation
         	setPredictedTimesFromScheduleDeviation(instance, blockLocation,
        	         getDefaultScheduleDeviation(blockLocation), targetTime);
        }
@@ -686,19 +690,19 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 
   /**
    * Find absolute time point prediction for given stopId
-   * @param timepointPredictions Predictions for a block containing the provided stopId
+   * @param timepointPredictions predictions for a block containing the provided stopId
    * @param stopId the stopId to find absolute predictions for
    * @return the absolute arrival time prediction for the given stopId, 
-   *         or -1 if there is no time point prediction for the given stop 
+   *         or null if there is no time point prediction for the given stop 
    */
-  private long findPredictedArrivalTime(
+  private Long findPredictedArrivalTime(
 	List<TimepointPredictionRecord> timepointPredictions, AgencyAndId stopId) {
 	for (TimepointPredictionRecord tpr : timepointPredictions) {
 	  if (stopId.equals(tpr.getTimepointId())) {
 		  return tpr.getTimepointPredictedTime();
 	  }
 	}
-	return -1;
+	return null;
   }
 
 /**
