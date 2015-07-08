@@ -646,21 +646,20 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
     		long predictedArrivalTime = findPredictedArrivalTime(blockLocation.getTimepointPredictions(), 
     				instance.getStop().getId());
     		if (predictedArrivalTime == -1) {
-    			// if there are time point predictions for upstream of the bus stop 
-    			// and the predictions doesn't contain the bus stop 
-    			// then calculate best schedule deviation
+    			// If there are time point predictions upstream of the bus stop and the predictions do not contain the 
+				// bus stop then calculate best schedule deviation (we still need to interpolate the downstream arrival time)
     			int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
     			setPredictedTimesFromScheduleDeviation(instance, blockLocation,
     					scheduleDeviation, targetTime);
 			} else {
-				// If there is exact time point prediction for the bus stop use it
+				// If there is exact absolute time point prediction for the bus stop, use it
 				setPredictedTimesFromAbsoluteArrivalTimes(instance, predictedArrivalTime, blockLocation, targetTime);
 			}
     	} else if (blockLocation.getTimepointPredictions() != null && !blockLocation.getTimepointPredictions().isEmpty()){
-    		// if the bus passed the stop then don't show predictions
+    		// If the bus passed the stop, then don't show arrival info
     		instance.setVisible(false);
     	} else {
-    		// if there are no time point predictions use default schedule deviation
+    		// If there are no time point predictions use default schedule deviation
         	setPredictedTimesFromScheduleDeviation(instance, blockLocation,
        	         getDefaultScheduleDeviation(blockLocation), targetTime);
        }
@@ -668,7 +667,7 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   }
 
   /**
-   * Sets absolute arrival times from gtfs-rt
+   * Sets the predicted arrival times based on absolute arrival times from gtfs-rt for a particular stop
    * @param instance
    * @param predictedArrivalTime
    * @param blockLocation
@@ -686,10 +685,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   }
 
   /**
-   * Find absolute time point prediction for given stop id
-   * @param timepointPredictions
-   * @param stopId
-   * @return -1 if there is no time point prediction for stop 
+   * Find absolute time point prediction for given stopId
+   * @param timepointPredictions Predictions for a block containing the provided stopId
+   * @param stopId the stopId to find absolute predictions for
+   * @return the absolute arrival time prediction for the given stopId, 
+   *         or -1 if there is no time point prediction for the given stop 
    */
   private long findPredictedArrivalTime(
 	List<TimepointPredictionRecord> timepointPredictions, AgencyAndId stopId) {
@@ -702,11 +702,13 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   }
 
 /**
-   * This method checks time point predictions.
-   * @param timepointPredictions for the block
-   * @param stopTimelist stop_times from static gtfs data
+   * This method checks time point predictions to see if predictions are downstream of the provided stopId.  It returns true
+   * if the predicted arrival times are upstream or include the given stopId (we assume the bus hasn't visited the stop yet),
+   * or false if the predictions are downstream of the given stopId (we assume the bus already visited the given stopId).
+   * @param timepointPredictions arrival time predictions for the block
+   * @param stopTimelist schedule stop_times from static gtfs data
    * @param stopId current stop id
-   * @return false if the bus is in downstream of the current stop, otherwise returns true
+   * @return false if the bus is downstream of the given stopId, otherwise returns true
    */
   private boolean checkTimepointPredictions(
 	  List<TimepointPredictionRecord> timepointPredictions, List<BlockStopTimeEntry> stopTimelist,
@@ -714,11 +716,17 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 	  // First stop_time_update from gtfs-rt
 	  AgencyAndId timepointId = timepointPredictions.get(0).getTimepointId();
 	  
+	  // We scan down the block looking at each stopId in stop_sequence order, comparing each stop_sequence stop ID to the 
+	  // first timepointId stopId that's in the real-time prediction data.  If we find the timepointId stopId in the block 
+	  // BEFORE we encounter the stopId for the current stop we're examining, then the bus hasn't visited the stop yet 
+	  // (because we're still predicting arrivals upstream of the current stop).  If we find the given stopId before we encounter
+	  // any arrival predictions, then the predictions are all downstream of the current stopId, and we assume that the bus has
+	  // already passed the given stopId.
 	  if (timepointPredictions != null && !timepointPredictions.isEmpty()) {
 		  for (BlockStopTimeEntry bste : stopTimelist) {
 			AgencyAndId stopTimeId = bste.getStopTime().getStop().getId();
 			if (stopTimeId.equals(timepointId)) {
-				// Bus haven't visited the stop yet
+				// Bus hasn't visited the stop yet
 				return true;
 			}
 			if (stopTimeId.equals(stopId)) {
