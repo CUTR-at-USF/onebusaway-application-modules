@@ -641,37 +641,37 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 
     if (blockLocation.isScheduleDeviationSet()
 	        || blockLocation.areScheduleDeviationsSet()) {
-			
+
 		List<TimepointPredictionRecord> tpList = blockLocation.getTimepointPredictions();
 		AgencyAndId stopId = instance.getStop().getId();
-		
-    	if (checkTimepointPredictions(tpList, instance.getBlockTrip().getStopTimes(), stopId)) {
+
+	if (!arePredictionsDownstream(tpList, instance.getBlockTrip().getStopTimes(), stopId)) {
 			// Real-time predictions are either upstream of or include the current stopId
-    		Long predictedArrivalTime = findPredictedArrivalTime(tpList, stopId);
-						
-    		if (predictedArrivalTime != null) {
-    			// There is exact absolute time point prediction for the stop, so use it
+		Long predictedArrivalTime = findPredictedArrivalTime(tpList, stopId);
+
+		if (predictedArrivalTime != null) {
+			// There is exact absolute time point prediction for the stop, so use it
 				setPredictedTimesFromAbsoluteArrivalTimes(instance, predictedArrivalTime, blockLocation, targetTime);
 			} else {
-				// There are time point predictions upstream of the stop and the predictions do not contain the 
+				// There are time point predictions upstream of the stop and the predictions do not contain the
 				// stop, so calculate best schedule deviation (we still need to interpolate the downstream arrival times)
-    			int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
-    			setPredictedTimesFromScheduleDeviation(instance, blockLocation,
-    					scheduleDeviation, targetTime);
+			int scheduleDeviation = getBestScheduleDeviation(instance, blockLocation);
+			setPredictedTimesFromScheduleDeviation(instance, blockLocation,
+					scheduleDeviation, targetTime);
 			}
-    	} else if (tpList != null && !tpList.isEmpty()){
-    		// The vehicle passed the stop (all predictions are downstream of the stopId), so don't show arrival info
-    		instance.setVisible(false);
-    	} else {
-    		// There are no time point predictions, so use default schedule deviation
-        	setPredictedTimesFromScheduleDeviation(instance, blockLocation,
-       	         getDefaultScheduleDeviation(blockLocation), targetTime);
+	} else if (tpList != null && !tpList.isEmpty()){
+		// The vehicle passed the stop (all predictions are downstream of the stopId), so don't show arrival info
+		instance.setVisible(false);
+	} else {
+		// There are no time point predictions, so use default schedule deviation
+		setPredictedTimesFromScheduleDeviation(instance, blockLocation,
+	         getDefaultScheduleDeviation(blockLocation), targetTime);
        }
 	}
   }
 
   /**
-   * Sets the predicted arrival times based on absolute arrival times from gtfs-rt for a particular stop
+   * Sets the predicted arrival times based on absolute arrival times from GTFS-rt for a particular stop
    * @param instance
    * @param predictedArrivalTime
    * @param blockLocation
@@ -692,8 +692,8 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
    * Find absolute time point prediction for given stopId
    * @param timepointPredictions predictions for a block containing the provided stopId
    * @param stopId the stopId to find absolute predictions for
-   * @return the absolute arrival time prediction for the given stopId, 
-   *         or null if there is no time point prediction for the given stop 
+   * @return the absolute arrival time prediction for the given stopId,
+   *         or null if there is no time point prediction for the given stop
    */
   private Long findPredictedArrivalTime(
 	List<TimepointPredictionRecord> timepointPredictions, AgencyAndId stopId) {
@@ -707,39 +707,38 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 
 /**
    * This method checks time point predictions to see if predictions are downstream of the provided stopId.  It returns true
-   * if the predicted arrival times are upstream or include the given stopId (we assume the bus hasn't visited the stop yet),
-   * or false if the predictions are downstream of the given stopId (we assume the bus already visited the given stopId).
+   * if the predictions are downstream of the given stopId, and false if the predicted arrival times are upstream or include
+   * the given stopId.
    * @param timepointPredictions arrival time predictions for the block
    * @param stopTimelist schedule stop_times from static gtfs data
    * @param stopId current stop id
-   * @return false if the bus is downstream of the given stopId, otherwise returns true
+   * @return true if the predictions are downstream of the given stopId, otherwise returns false
    */
-  private boolean checkTimepointPredictions(
+  private boolean arePredictionsDownstream(
 	  List<TimepointPredictionRecord> timepointPredictions, List<BlockStopTimeEntry> stopTimelist,
 	  AgencyAndId stopId) {
 	  // First stop_time_update from gtfs-rt
 	  AgencyAndId timepointId = timepointPredictions.get(0).getTimepointId();
-	  
-	  // We scan down the block looking at each stopId in stop_sequence order, comparing each stop_sequence stop ID to the 
-	  // first timepointId stopId that's in the real-time prediction data.  If we find the timepointId stopId in the block 
-	  // BEFORE we encounter the stopId for the current stop we're examining, then the bus hasn't visited the stop yet 
-	  // (because we're still predicting arrivals upstream of the current stop).  If we find the given stopId before we encounter
-	  // any arrival predictions, then the predictions are all downstream of the current stopId, and we assume that the bus has
+
+	  // We scan down the block looking at each stopId in stop_sequence order, comparing each stop_sequence stop ID to the
+	  // first timepointId stopId that's in the real-time prediction data.  If we find the timepointId stopId in the block
+	  // BEFORE we encounter the stopId for the current stop we're examining, then the predictions are upstream of the current stop).
+	  // If we find the given stopId before we encounter any arrival predictions, then the predictions are all downstream of the current stopId, and we assume that the bus has
 	  // already passed the given stopId.
 	  if (timepointPredictions != null && !timepointPredictions.isEmpty()) {
 		  for (BlockStopTimeEntry bste : stopTimelist) {
 			AgencyAndId stopTimeId = bste.getStopTime().getStop().getId();
 			if (stopTimeId.equals(timepointId)) {
 				// Bus hasn't visited the stop yet
-				return true;
+				return false;
 			}
 			if (stopTimeId.equals(stopId)) {
-				// Bus already passed the stop   
-				return false;
+				// Bus already passed the stop
+				return true;
 			}
 		  }
 	  }
-	  return false;
+	  return true;
   }
 
   private int getBestScheduleDeviation(ArrivalAndDepartureInstance instance,
@@ -813,7 +812,7 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * This method both sets the predicted arrival time for an instance, but also
    * updates the scheduled arrival time for a frequency-based instance
-   * 
+   *
    * @param instance
    * @param arrivalTime
    */
@@ -829,7 +828,7 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * This method both sets the predicted departure time for an instance, but
    * also updates the scheduled departure time for a frequency-based instance
-   * 
+   *
    * @param instance
    * @param departureTime
    */
@@ -1190,10 +1189,10 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * Constructs an {@link ArrivalAndDepartureTime} object for the specified
    * {@link BlockInstance} and {@link BlockStopTimeEntry}.
-   * 
+   *
    * For frequency-based trips, the calculation is a bit complicated.
-   * 
-   * 
+   *
+   *
    * @param blockInstance
    * @param blockStopTime
    * @param prevFrequencyTime
