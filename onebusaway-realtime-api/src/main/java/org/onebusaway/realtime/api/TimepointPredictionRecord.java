@@ -27,6 +27,8 @@ public class TimepointPredictionRecord implements Serializable {
    * 
    */
   private AgencyAndId timepointId;
+  
+  private AgencyAndId tripId;
 
   private long timepointScheduledTime;
 
@@ -40,6 +42,7 @@ public class TimepointPredictionRecord implements Serializable {
     this.timepointId = r.timepointId;
     this.timepointPredictedTime = r.timepointPredictedTime;
     this.timepointScheduledTime = r.timepointScheduledTime;
+    this.tripId = r.tripId;
   }
 
   public AgencyAndId getTimepointId() {
@@ -65,4 +68,12 @@ public class TimepointPredictionRecord implements Serializable {
   public void setTimepointPredictedTime(long timepointPredictedTime) {
     this.timepointPredictedTime = timepointPredictedTime;
   }
+
+public AgencyAndId getTripId() {
+	return tripId;
+}
+
+public void setTripId(AgencyAndId tripId) {
+	this.tripId = tripId;
+}
 }
