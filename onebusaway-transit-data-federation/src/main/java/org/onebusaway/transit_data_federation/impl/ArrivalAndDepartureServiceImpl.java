@@ -687,7 +687,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * Sets the predicted arrival times based on absolute arrival times from
    * GTFS-rt for a particular stop
+<<<<<<< HEAD
    *
+=======
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param instance
    * @param predictedArrivalTime
    * @param blockLocation
@@ -707,7 +711,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 
   /**
    * Find absolute time point prediction for given stopId
+<<<<<<< HEAD
    *
+=======
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param timepointPredictions predictions for a block containing the provided
    *          stopId
    * @param stopId the stopId to find absolute predictions for
@@ -729,7 +737,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
    * downstream of the provided stopId. It returns true if the predictions are
    * downstream of the given stopId, and false if the predicted arrival times
    * are upstream or include the given stopId.
+<<<<<<< HEAD
    *
+=======
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param timepointPredictions arrival time predictions for the block
    * @param blockTripEntry contains schedule stop_times from static gtfs data
    * @param stopId current stop id
@@ -777,7 +789,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
 
   /**
    * This method returns the first time point prediction for given trip
+<<<<<<< HEAD
    *
+=======
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param timepointPredictions arrival time predictions for the block
    * @param tripId active trip id
    * @return TimepointId if there is a TimepointPredictionRecord with given
@@ -864,7 +880,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * This method both sets the predicted arrival time for an instance, but also
    * updates the scheduled arrival time for a frequency-based instance
+<<<<<<< HEAD
    *
+=======
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param instance
    * @param arrivalTime
    */
@@ -880,7 +900,11 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * This method both sets the predicted departure time for an instance, but
    * also updates the scheduled departure time for a frequency-based instance
+<<<<<<< HEAD
    *
+=======
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param instance
    * @param departureTime
    */
@@ -1241,10 +1265,17 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
   /**
    * Constructs an {@link ArrivalAndDepartureTime} object for the specified
    * {@link BlockInstance} and {@link BlockStopTimeEntry}.
+<<<<<<< HEAD
    *
    * For frequency-based trips, the calculation is a bit complicated.
    *
    *
+=======
+   * 
+   * For frequency-based trips, the calculation is a bit complicated.
+   * 
+   * 
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
    * @param blockInstance
    * @param blockStopTime
    * @param prevFrequencyTime

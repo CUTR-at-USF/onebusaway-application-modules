@@ -375,7 +375,11 @@ class GtfsRealtimeTripLibrary {
               tpr.setTimepointId(stopTime.getStop().getId());
               tpr.setTimepointPredictedTime(timepointPredictedTime);
               tpr.setTripId(stopTime.getTrip().getId());
+<<<<<<< HEAD
 
+=======
+              
+>>>>>>> 553593915429e39255c5f6662df00e2efa4784d2
               timepointPredictions.add(tpr);
             }
             int currentDepartureTime = computeDepartureTime(stopTime,

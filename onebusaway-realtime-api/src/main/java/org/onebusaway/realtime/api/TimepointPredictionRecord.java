@@ -27,6 +27,8 @@ public class TimepointPredictionRecord implements Serializable {
    * 
    */
   private AgencyAndId timepointId;
+  
+  private AgencyAndId tripId;
 
   private AgencyAndId tripId;
 
