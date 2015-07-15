@@ -303,7 +303,7 @@ public class TimepointPredictionServiceImpl {
     if (_includeTimepointPredictionRecords) {
       TimepointPredictionRecord tpr = new TimepointPredictionRecord();
       tpr.setTimepointId(best.getTimepointId());
-      tpr.setTimepointPredictedTime(best.getTimepointPredictedTime());
+      tpr.setTimepointPredictedArrivalTime((long) best.getTimepointPredictedTime());
       tpr.setTimepointScheduledTime(best.getTimepointScheduledTime());
       r.setTimepointPredictions(Arrays.asList(tpr));
     }

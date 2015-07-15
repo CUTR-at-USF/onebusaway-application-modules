@@ -117,7 +117,11 @@ class GtfsRealtimeServiceImpl implements GtfsRealtimeService {
            stopTimeUpdate.setScheduleRelationship(com.google.transit.realtime.GtfsRealtime.TripUpdate.StopTimeUpdate.ScheduleRelationship.SCHEDULED);
       
            StopTimeEvent.Builder stopTimeEvent = StopTimeEvent.newBuilder();
-           stopTimeEvent.setTime(tpr.getTimepointPredictedTime());
+           if (tpr.getTimepointPredictedDepartureTime() != null) {
+             stopTimeEvent.setTime(tpr.getTimepointPredictedDepartureTime());
+           } else {
+             stopTimeEvent.setTime(tpr.getTimepointPredictedArrivalTime());
+           }
            stopTimeUpdate.setArrival(stopTimeEvent);
    
            tripUpdate.addStopTimeUpdate(stopTimeUpdate); 

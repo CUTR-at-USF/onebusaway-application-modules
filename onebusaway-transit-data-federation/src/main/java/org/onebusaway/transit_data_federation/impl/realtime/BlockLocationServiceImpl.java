@@ -559,7 +559,12 @@ public class BlockLocationServiceImpl implements BlockLocationService,
 
         for (TimepointPredictionRecord tpr : timepointPredictions) {
           AgencyAndId stopId = tpr.getTimepointId();
-          long predictedTime = tpr.getTimepointPredictedTime();
+          long predictedTime;
+          if (tpr.getTimepointPredictedDepartureTime() != null) {
+            predictedTime = tpr.getTimepointPredictedDepartureTime();
+          } else {
+            predictedTime = tpr.getTimepointPredictedArrivalTime();
+          }
           if (stopId == null || predictedTime == 0)
             continue;
 
@@ -568,7 +573,7 @@ public class BlockLocationServiceImpl implements BlockLocationService,
             StopEntry stop = stopTime.getStop();
             if (stopId.equals(stop.getId())) {
               int arrivalTime = stopTime.getArrivalTime();
-              int deviation = (int) ((tpr.getTimepointPredictedTime() - blockInstance.getServiceDate()) / 1000 - arrivalTime);
+              int deviation = (int) ((predictedTime - blockInstance.getServiceDate()) / 1000 - arrivalTime);
               scheduleDeviations.put(arrivalTime, (double) deviation);
             }
           }
@@ -880,7 +885,8 @@ public class BlockLocationServiceImpl implements BlockLocationService,
     for (TimepointPredictionRecord tpr : predictions) {
       builder.setTimepointId(tpr.getTimepointId());
       builder.setTimepointScheduledTime(tpr.getTimepointScheduledTime());
-      builder.setTimepointPredictedTime(tpr.getTimepointPredictedTime());
+      builder.setTimepointPredictedArrivalTime(tpr.getTimepointPredictedArrivalTime());
+      builder.setTimepointPredictedDepartureTime(tpr.getTimepointPredictedDepartureTime());
       results.add(builder.create());
     }
     return results;

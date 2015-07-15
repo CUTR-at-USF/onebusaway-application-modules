@@ -654,13 +654,13 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
       if (!arePredictionsDownstream(tpList, instance.getBlockTrip(), stopId)) {
         // Real-time predictions are either upstream of or include the current
         // stopId
-        Long predictedArrivalTime = findPredictedArrivalTime(tpList, stopId);
+        Long predictedTime = findPredictedTime(tpList, stopId);
 
-        if (predictedArrivalTime != null) {
+        if (predictedTime != null) {
           // There is exact absolute time point prediction for the stop, so use
           // it
           setPredictedTimesFromAbsoluteArrivalTimes(instance,
-              predictedArrivalTime, blockLocation, targetTime);
+              predictedTime, blockLocation, targetTime);
         } else {
           // There are time point predictions upstream of the stop and the
           // predictions do not contain the
@@ -711,14 +711,20 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
    * @param timepointPredictions predictions for a block containing the provided
    *          stopId
    * @param stopId the stopId to find absolute predictions for
-   * @return the absolute arrival time prediction for the given stopId, or null
+   * @return the absolute departure time prediction for the given stopId, or 
+   *         the absolute arrival time prediction for the given stopId 
+   *         if the departure time prediction is null, or null
    *         if there is no time point prediction for the given stop
    */
-  private Long findPredictedArrivalTime(
+  private Long findPredictedTime(
       List<TimepointPredictionRecord> timepointPredictions, AgencyAndId stopId) {
     for (TimepointPredictionRecord tpr : timepointPredictions) {
       if (stopId.equals(tpr.getTimepointId())) {
-        return tpr.getTimepointPredictedTime();
+        if (tpr.getTimepointPredictedDepartureTime() != null) {
+          return tpr.getTimepointPredictedDepartureTime();
+        } else {
+          return tpr.getTimepointPredictedArrivalTime();
+        }
       }
     }
     return null;

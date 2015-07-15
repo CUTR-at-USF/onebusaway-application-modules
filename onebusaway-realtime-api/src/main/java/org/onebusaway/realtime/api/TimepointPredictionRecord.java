@@ -32,7 +32,9 @@ public class TimepointPredictionRecord implements Serializable {
 
   private long timepointScheduledTime;
 
-  private long timepointPredictedTime;
+  private Long timepointPredictedArrivalTime;
+
+  private Long timepointPredictedDepartureTime;
 
   public TimepointPredictionRecord() {
 
@@ -40,8 +42,9 @@ public class TimepointPredictionRecord implements Serializable {
 
   public TimepointPredictionRecord(TimepointPredictionRecord r) {
     this.timepointId = r.timepointId;
-    this.timepointPredictedTime = r.timepointPredictedTime;
     this.timepointScheduledTime = r.timepointScheduledTime;
+    this.timepointPredictedArrivalTime = r.timepointPredictedArrivalTime;
+    this.timepointPredictedDepartureTime = r.timepointPredictedDepartureTime;
     this.tripId = r.tripId;
   }
 
@@ -61,19 +64,29 @@ public class TimepointPredictionRecord implements Serializable {
     this.timepointScheduledTime = timepointScheduledTime;
   }
 
-  public long getTimepointPredictedTime() {
-    return timepointPredictedTime;
+  public AgencyAndId getTripId() {
+	  return tripId;
   }
 
-  public void setTimepointPredictedTime(long timepointPredictedTime) {
-    this.timepointPredictedTime = timepointPredictedTime;
+  public void setTripId(AgencyAndId tripId) {
+	  this.tripId = tripId;
   }
 
-public AgencyAndId getTripId() {
-	return tripId;
-}
+  public Long getTimepointPredictedArrivalTime() {
+	  return timepointPredictedArrivalTime;
+  }
 
-public void setTripId(AgencyAndId tripId) {
-	this.tripId = tripId;
-}
+  public void setTimepointPredictedArrivalTime(
+		  Long timepointPredictedArrivalTime) {
+	  this.timepointPredictedArrivalTime = timepointPredictedArrivalTime;
+  }
+
+  public Long getTimepointPredictedDepartureTime() {
+	  return timepointPredictedDepartureTime;
+  }
+
+  public void setTimepointPredictedDepartureTime(
+		  Long timepointPredictedDepartureTime) {
+	  this.timepointPredictedDepartureTime = timepointPredictedDepartureTime;
+  }
 }

@@ -363,26 +363,37 @@ class GtfsRealtimeTripLibrary {
                 instance.getServiceDate());
             if (blockStopTime == null)
               continue;
+            
             StopTimeEntry stopTime = blockStopTime.getStopTime();
+            
+            TimepointPredictionRecord tpr = new TimepointPredictionRecord();
+            tpr.setTimepointId(stopTime.getStop().getId());
+            tpr.setTripId(stopTime.getTrip().getId());
+            
             int currentArrivalTime = computeArrivalTime(stopTime,
                 stopTimeUpdate, instance.getServiceDate());
+            int currentDepartureTime = computeDepartureTime(stopTime,
+                stopTimeUpdate, instance.getServiceDate());
+            
             if (currentArrivalTime >= 0) {
               updateBestScheduleDeviation(currentTime,
                   stopTime.getArrivalTime(), currentArrivalTime, best);
               
               long timepointPredictedTime = instance.getServiceDate() + (currentArrivalTime * 1000L);
-              TimepointPredictionRecord tpr = new TimepointPredictionRecord();
-              tpr.setTimepointId(stopTime.getStop().getId());
-              tpr.setTimepointPredictedTime(timepointPredictedTime);
-              tpr.setTripId(stopTime.getTrip().getId());
-              
-              timepointPredictions.add(tpr);
-            }
-            int currentDepartureTime = computeDepartureTime(stopTime,
-                stopTimeUpdate, instance.getServiceDate());
+              tpr.setTimepointPredictedArrivalTime(timepointPredictedTime);
+            } 
+            
             if (currentDepartureTime >= 0) {
               updateBestScheduleDeviation(currentTime,
                   stopTime.getDepartureTime(), currentDepartureTime, best);
+              
+              long timepointPredictedTime = instance.getServiceDate() + (currentDepartureTime * 1000L);
+              tpr.setTimepointPredictedDepartureTime(timepointPredictedTime);
+            }
+            
+            if (tpr.getTimepointPredictedArrivalTime() != null || 
+                tpr.getTimepointPredictedDepartureTime() != null) {
+              timepointPredictions.add(tpr);
             }
           }
         }

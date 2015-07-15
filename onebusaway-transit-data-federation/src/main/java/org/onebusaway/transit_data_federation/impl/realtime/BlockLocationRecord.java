@@ -100,7 +100,9 @@ public class BlockLocationRecord {
 
   private final long timepointScheduledTime;
 
-  private final long timepointPredictedTime;
+  private final Long timepointPredictedArrivalTime;
+
+  private final Long timepointPredictedDepartureTime;
 
   /**
    * Custom Hibernate mapping so that the vehicle phase enum gets mapped to a
@@ -137,7 +139,8 @@ public class BlockLocationRecord {
     orientation = null;
     timepointId = null;
     timepointScheduledTime = 0;
-    timepointPredictedTime = 0;
+    timepointPredictedArrivalTime = null;
+    timepointPredictedDepartureTime = null;
     phase = null;
     status = null;
     vehicleId = null;
@@ -156,7 +159,8 @@ public class BlockLocationRecord {
     this.orientation = builder.orientation;
     this.timepointId = builder.timepointId;
     this.timepointScheduledTime = builder.timepointScheduledTime;
-    this.timepointPredictedTime = builder.timepointPredictedTime;
+    this.timepointPredictedArrivalTime = builder.timepointPredictedArrivalTime;
+    this.timepointPredictedDepartureTime = builder.timepointPredictedDepartureTime;
     this.phase = builder.phase;
     this.status = builder.status;
     this.vehicleId = builder.vehicleId;
@@ -261,8 +265,12 @@ public class BlockLocationRecord {
     return timepointScheduledTime;
   }
 
-  public long getTimepointPredictedTime() {
-    return timepointPredictedTime;
+  public Long getTimepointPredictedArrivalTime() {
+    return timepointPredictedArrivalTime;
+  }
+
+  public Long getTimepointPredictedDepartureTime() {
+    return timepointPredictedDepartureTime;
   }
 
   public EVehiclePhase getPhase() {
@@ -316,7 +324,9 @@ public class BlockLocationRecord {
 
     private long timepointScheduledTime;
 
-    private long timepointPredictedTime;
+    private Long timepointPredictedArrivalTime;
+
+    private Long timepointPredictedDepartureTime;
 
     private EVehiclePhase phase;
 
@@ -382,8 +392,12 @@ public class BlockLocationRecord {
       this.timepointScheduledTime = timepointScheduledTime;
     }
 
-    public void setTimepointPredictedTime(long timepointPredictedTime) {
-      this.timepointPredictedTime = timepointPredictedTime;
+    public void setTimepointPredictedArrivalTime(Long timepointPredictedArrivalTime) {
+      this.timepointPredictedArrivalTime = timepointPredictedArrivalTime;
+    }
+
+    public void setTimepointPredictedDepartureTime(Long timepointPredictedDepartureTime) {
+      this.timepointPredictedDepartureTime = timepointPredictedDepartureTime;
     }
 
     public void setPhase(EVehiclePhase phase) {
