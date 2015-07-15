@@ -320,11 +320,8 @@ public class TripStatusBeanServiceImpl implements TripDetailsBeanService {
       for (TimepointPredictionRecord tpr: blockLocation.getTimepointPredictions()) {
         TimepointPredictionBean tpb = new TimepointPredictionBean();
         tpb.setTimepointId(tpr.getTimepointId().toString());
-        if (tpr.getTimepointPredictedArrivalTime() != null) {
-          tpb.setTimepointPredictedTime(tpr.getTimepointPredictedArrivalTime());
-        } else {
-          tpb.setTimepointPredictedTime(tpr.getTimepointPredictedDepartureTime());
-        }
+        tpb.setTimepointPredictedArrivalTime(tpr.getTimepointPredictedArrivalTime());
+        tpb.setTimepointPredictedDepartureTime(tpr.getTimepointPredictedDepartureTime());
         timepointPredictions.add(tpb);
       }
       bean.setTimepointPredictions(timepointPredictions);

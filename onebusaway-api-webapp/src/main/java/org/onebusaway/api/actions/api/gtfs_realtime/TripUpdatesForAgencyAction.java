@@ -19,6 +19,7 @@ import org.onebusaway.transit_data.model.ListBean;
 import org.onebusaway.transit_data.model.RouteBean;
 import org.onebusaway.transit_data.model.StopBean;
 import org.onebusaway.transit_data.model.VehicleStatusBean;
+import org.onebusaway.transit_data.model.trips.TimepointPredictionBean;
 import org.onebusaway.transit_data.model.trips.TripBean;
 import org.onebusaway.transit_data.model.trips.TripStatusBean;
 
@@ -27,7 +28,6 @@ import com.google.transit.realtime.GtfsRealtime.FeedMessage;
 import com.google.transit.realtime.GtfsRealtime.TripDescriptor;
 import com.google.transit.realtime.GtfsRealtime.TripUpdate;
 import com.google.transit.realtime.GtfsRealtime.VehicleDescriptor;
-import org.onebusaway.transit_data.model.trips.TimepointPredictionBean;
 
 public class TripUpdatesForAgencyAction extends GtfsRealtimeActionSupport {
 
@@ -64,7 +64,14 @@ public class TripUpdatesForAgencyAction extends GtfsRealtimeActionSupport {
           TripUpdate.StopTimeUpdate.Builder stopTimeUpdate = tripUpdate.addStopTimeUpdateBuilder();
           stopTimeUpdate.setStopId(normalizeId(timepointPrediction.getTimepointId()));
           TripUpdate.StopTimeEvent.Builder arrival = stopTimeUpdate.getArrivalBuilder();
-          arrival.setTime(timepointPrediction.getTimepointPredictedTime());
+          if (timepointPrediction.getTimepointPredictedArrivalTime() != null) {
+            arrival.setTime(timepointPrediction.getTimepointPredictedArrivalTime());
+          }
+  
+          TripUpdate.StopTimeEvent.Builder departure = stopTimeUpdate.getDepartureBuilder();
+          if (timepointPrediction.getTimepointPredictedDepartureTime() != null) {
+            departure.setTime(timepointPrediction.getTimepointPredictedDepartureTime());
+          }
         }
         
         tripUpdate.setTimestamp(vehicle.getLastUpdateTime() / 1000);

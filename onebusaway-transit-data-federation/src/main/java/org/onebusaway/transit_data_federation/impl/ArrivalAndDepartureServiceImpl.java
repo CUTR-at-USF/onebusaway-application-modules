@@ -654,13 +654,13 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
       if (!arePredictionsDownstream(tpList, instance.getBlockTrip(), stopId)) {
         // Real-time predictions are either upstream of or include the current
         // stopId
-        Long predictedTime = findPredictedTime(tpList, stopId);
+        TimepointPredictionRecord predictionRecord = findTimepointPredictionRecordByStopId(tpList, stopId);
 
-        if (predictedTime != null) {
+        if (predictionRecord != null) {
           // There is exact absolute time point prediction for the stop, so use
           // it
           setPredictedTimesFromAbsoluteArrivalTimes(instance,
-              predictedTime, blockLocation, targetTime);
+              predictionRecord, blockLocation, targetTime);
         } else {
           // There are time point predictions upstream of the stop and the
           // predictions do not contain the
@@ -694,11 +694,23 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
    * @param targetTime
    */
   private void setPredictedTimesFromAbsoluteArrivalTimes(
-      ArrivalAndDepartureInstance instance, long predictedArrivalTime,
+      ArrivalAndDepartureInstance instance, TimepointPredictionRecord predictionRecord,
       BlockLocation blockLocation, long targetTime) {
 
-    setPredictedArrivalTimeForInstance(instance, predictedArrivalTime);
-    setPredictedDepartureTimeForInstance(instance, predictedArrivalTime);
+    Long predictedArrivalTime = predictionRecord.getTimepointPredictedArrivalTime();
+    Long predictedDepartureTime = predictionRecord.getTimepointPredictedDepartureTime();
+    
+    if (predictedArrivalTime != null) {
+      setPredictedArrivalTimeForInstance(instance, predictedArrivalTime);
+    } else {
+      setPredictedArrivalTimeForInstance(instance, predictedDepartureTime);
+    }
+    
+    if (predictedDepartureTime != null) {
+      setPredictedDepartureTimeForInstance(instance, predictedDepartureTime);
+    } else {
+      setPredictedDepartureTimeForInstance(instance, predictedArrivalTime);
+    }
 
     TimeIntervalBean predictedDepartureTimeInterval = computePredictedDepartureTimeInterval(
         instance, blockLocation, targetTime);
@@ -711,20 +723,15 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
    * @param timepointPredictions predictions for a block containing the provided
    *          stopId
    * @param stopId the stopId to find absolute predictions for
-   * @return the absolute departure time prediction for the given stopId, or 
-   *         the absolute arrival time prediction for the given stopId 
-   *         if the departure time prediction is null, or null
+   * @return TimepointPredictionRecord which contains the absolute departure 
+   *         and arrival time predictions for the given stopId, or null
    *         if there is no time point prediction for the given stop
    */
-  private Long findPredictedTime(
+  private TimepointPredictionRecord findTimepointPredictionRecordByStopId(
       List<TimepointPredictionRecord> timepointPredictions, AgencyAndId stopId) {
     for (TimepointPredictionRecord tpr : timepointPredictions) {
       if (stopId.equals(tpr.getTimepointId())) {
-        if (tpr.getTimepointPredictedDepartureTime() != null) {
-          return tpr.getTimepointPredictedDepartureTime();
-        } else {
-          return tpr.getTimepointPredictedArrivalTime();
-        }
+        return tpr;
       }
     }
     return null;

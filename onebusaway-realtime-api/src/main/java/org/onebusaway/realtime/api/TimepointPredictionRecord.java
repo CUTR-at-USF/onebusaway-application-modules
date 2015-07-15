@@ -21,7 +21,7 @@ import org.onebusaway.gtfs.model.AgencyAndId;
 
 public class TimepointPredictionRecord implements Serializable {
 
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 2L;
 
   /**
    * 

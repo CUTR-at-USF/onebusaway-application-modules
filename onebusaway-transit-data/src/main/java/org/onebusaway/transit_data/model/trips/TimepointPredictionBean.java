@@ -25,7 +25,9 @@ public class TimepointPredictionBean implements Serializable {
 
   private long timepointScheduledTime;
 
-  private long timepointPredictedTime;
+  private Long timepointPredictedArrivalTime;
+
+  private Long timepointPredictedDepartureTime;
 
   public TimepointPredictionBean() {
 
@@ -47,11 +49,21 @@ public class TimepointPredictionBean implements Serializable {
     this.timepointScheduledTime = timepointScheduledTime;
   }
 
-  public long getTimepointPredictedTime() {
-    return timepointPredictedTime;
+  public Long getTimepointPredictedArrivalTime() {
+	  return timepointPredictedArrivalTime;
   }
 
-  public void setTimepointPredictedTime(long timepointPredictedTime) {
-    this.timepointPredictedTime = timepointPredictedTime;
+  public void setTimepointPredictedArrivalTime(
+		  Long timepointPredictedArrivalTime) {
+	  this.timepointPredictedArrivalTime = timepointPredictedArrivalTime;
+  }
+
+  public Long getTimepointPredictedDepartureTime() {
+	  return timepointPredictedDepartureTime;
+  }
+
+  public void setTimepointPredictedDepartureTime(
+		  Long timepointPredictedDepartureTime) {
+	  this.timepointPredictedDepartureTime = timepointPredictedDepartureTime;
   }
 }
