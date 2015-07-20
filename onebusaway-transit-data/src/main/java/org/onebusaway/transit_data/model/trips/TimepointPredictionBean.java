@@ -1,5 +1,6 @@
 /**
  * Copyright (C) 2013 Kurt Raschke <kurt@kurtraschke.com>
+ * Copyright (C) 2015 University of South Florida
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ import java.io.Serializable;
 
 public class TimepointPredictionBean implements Serializable {
 
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 2L;
 
   private String timepointId;
 

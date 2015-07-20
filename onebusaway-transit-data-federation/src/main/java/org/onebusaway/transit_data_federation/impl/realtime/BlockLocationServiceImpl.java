@@ -2,6 +2,7 @@
  * Copyright (C) 2011 Brian Ferris <bdferris@onebusaway.org>
  * Copyright (C) 2011 <inf71391@gmail.com>
  * Copyright (C) 2012 Google, Inc.
+ * Copyright (C) 2015 University of South Florida
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -571,7 +572,7 @@ public class BlockLocationServiceImpl implements BlockLocationService,
           for (BlockStopTimeEntry blockStopTime : blockConfig.getStopTimes()) {
             StopTimeEntry stopTime = blockStopTime.getStopTime();
             StopEntry stop = stopTime.getStop();
-            if (stopId.equals(stop.getId())) {
+            if (stopId.equals(stop.getId()) && stopTime.getTrip().getId().equals(tpr.getTripId())) {
               int arrivalTime = stopTime.getArrivalTime();
               int deviation = (int) ((predictedTime - blockInstance.getServiceDate()) / 1000 - arrivalTime);
               scheduleDeviations.put(arrivalTime, (double) deviation);
