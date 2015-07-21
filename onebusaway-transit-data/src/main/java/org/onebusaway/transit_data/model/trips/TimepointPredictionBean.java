@@ -20,9 +20,13 @@ import java.io.Serializable;
 
 public class TimepointPredictionBean implements Serializable {
 
-  private static final long serialVersionUID = 2L;
+  private static final long serialVersionUID = 3L;
 
   private String timepointId;
+  
+  private String tripId;
+  
+  private int stopSequence;
 
   private long timepointScheduledTime;
 
@@ -66,5 +70,21 @@ public class TimepointPredictionBean implements Serializable {
   public void setTimepointPredictedDepartureTime(
 		  Long timepointPredictedDepartureTime) {
 	  this.timepointPredictedDepartureTime = timepointPredictedDepartureTime;
+  }
+
+  public String getTripId() {
+	  return tripId;
+  }
+
+  public void setTripId(String tripId) {
+	  this.tripId = tripId;
+  }
+
+  public int getStopSequence() {
+	  return stopSequence;
+  }
+
+  public void setStopSequence(int stopSequence) {
+	  this.stopSequence = stopSequence;
   }
 }

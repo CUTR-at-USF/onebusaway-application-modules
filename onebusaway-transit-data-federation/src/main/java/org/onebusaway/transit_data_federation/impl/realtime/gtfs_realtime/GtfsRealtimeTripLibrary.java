@@ -369,7 +369,8 @@ class GtfsRealtimeTripLibrary {
             TimepointPredictionRecord tpr = new TimepointPredictionRecord();
             tpr.setTimepointId(stopTime.getStop().getId());
             tpr.setTripId(stopTime.getTrip().getId());
-            
+            tpr.setStopSequence(stopTimeUpdate.getStopSequence());
+           
             int currentArrivalTime = computeArrivalTime(stopTime,
                 stopTimeUpdate, instance.getServiceDate());
             int currentDepartureTime = computeDepartureTime(stopTime,
