@@ -18,15 +18,13 @@ package org.onebusaway.transit_data.model.trips;
 
 import java.io.Serializable;
 
-import org.onebusaway.gtfs.model.AgencyAndId;
-
 public class TimepointPredictionBean implements Serializable {
 
   private static final long serialVersionUID = 2L;
 
   private String timepointId;
 
-  private AgencyAndId tripId;
+  private String tripId;
   
   private int stopSequence = -1;
   
@@ -56,11 +54,11 @@ public class TimepointPredictionBean implements Serializable {
     this.timepointScheduledTime = timepointScheduledTime;
   }
 
-  public AgencyAndId getTripId() {
+  public String getTripId() {
 	  return tripId;
   }
 
-  public void setTripId(AgencyAndId tripId) {
+  public void setTripId(String tripId) {
 	  this.tripId = tripId;
   }
 
