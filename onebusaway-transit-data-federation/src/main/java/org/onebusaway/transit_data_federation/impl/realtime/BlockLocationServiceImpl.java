@@ -575,14 +575,15 @@ public class BlockLocationServiceImpl implements BlockLocationService,
             // StopSequence equals to -1 when there is no stop sequence in the gtfs-rt
             if (stopId.equals(stop.getId()) && stopTime.getTrip().getId().equals(tpr.getTripId()) &&
                (tpr.getStopSequence() == -1 || stopTime.getSequence() == tpr.getStopSequence())) {
-              int arrivalTime;
+              int arrivalOrDepartureTime;
+              int index = stopTime.getArrivalTime();
               if (tpr.getTimepointPredictedDepartureTime() != -1) {
-                arrivalTime = stopTime.getDepartureTime();
+                arrivalOrDepartureTime = stopTime.getDepartureTime();
               } else {
-                arrivalTime = stopTime.getArrivalTime();
+                arrivalOrDepartureTime = stopTime.getArrivalTime();
               }
-              int deviation = (int) ((predictedTime - blockInstance.getServiceDate()) / 1000 - arrivalTime);
-              scheduleDeviations.put(arrivalTime, (double) deviation);
+              int deviation = (int) ((predictedTime - blockInstance.getServiceDate()) / 1000 - arrivalOrDepartureTime);
+              scheduleDeviations.put(index, (double) deviation);
             }
           }
         }
