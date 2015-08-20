@@ -127,14 +127,14 @@ public class ArrivalAndDepartureServiceImplTest {
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
     tprA.setTimepointId(stopA.getId());
-    long tprATime = serviceDate + time(13, 30);
+    long tprATime = createPredictedTime(time(13, 30));
     tprA.setTimepointPredictedArrivalTime(tprATime);
     tprA.setTripId(tripA.getId());
 
     // Set time point predictions for stop B
     TimepointPredictionRecord tprB = new TimepointPredictionRecord();
     tprB.setTimepointId(stopB.getId());
-    long tprBTime = serviceDate + time(13, 50);
+    long tprBTime = createPredictedTime(time(13, 50));
     tprB.setTimepointPredictedArrivalTime(tprBTime);
     tprB.setTripId(tripA.getId());
 
@@ -177,7 +177,7 @@ public class ArrivalAndDepartureServiceImplTest {
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
     tprA.setTimepointId(stopA.getId());
-    long tprATime = serviceDate + time(13, 35);
+    long tprATime = createPredictedTime(time(13, 35));
     tprA.setTimepointPredictedArrivalTime(tprATime);
     tprA.setTripId(tripA.getId());
 
@@ -188,10 +188,201 @@ public class ArrivalAndDepartureServiceImplTest {
     long predictedArrivalTime = getPredictedArrivalTimeByStopId(
         arrivalsAndDepartures, stopB.getId());
     
-    long scheduledArrivalTime = getScheduledStopTimeByStopId(tripA, stopB.getId());
-    // TODO - Change so we check that the predictedArrivalTime is 13:45 (scheduled time + upstream stop deviation)
+    long scheduledArrivalTime = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
+    
+    long scheduledArrivalTimeForStopA = getScheduledArrivalTimeByStopId(tripA, stopA.getId());
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
+    // Add the delay value from the previous stop's predictedArrivalTime
+    long delta = (scheduledDepartureTimeForStopA - scheduledArrivalTimeForStopA);
+    
     // Check if the predictedArrivalTime is no same with the scheduledArrivalTime
-    assertEquals(false, predictedArrivalTime == scheduledArrivalTime);
+    assertEquals(predictedArrivalTime/1000, scheduledArrivalTime + delta);
+  }
+  
+  /**
+   * This method tests upstream time point predictions with only predicted departure time.
+   * Test configuration: Time point predictions are upstream and include the current stop_id, which means 
+   * that the bus haven't passed the bus stop yet. There is only one bus stop (Stop A) which has 
+   * the real time departure time (time point prediction). In this case
+   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
+   * point prediction for particular stop's departure time, which
+   * replaces the scheduled time from GTFS for these stops.
+   * 
+   * Current time = 13:00
+   *          Schedule Arrival time  Schedule Departure time  Real-time departure time
+   * Stop A   13:30                  13:35                    13:30    
+   * Stop B   13:45                  13:50                    ----
+   *  
+   * When requesting arrival estimate for Stop A, result should be 13:25 (predicted departure time 
+   * - 5 min deviation from Stop A) 
+   * 
+   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed (departure time)  
+   * 
+   * When requesting arrival and departure estimate for Stop B, results should be 5 min less then
+   * the scheduled arrival and departure times. Since the upstream stop departures 5 min early, OBA 
+   * should remove this 5 min from the downstream estimates.
+   */
+  @Test
+  public void testGetArrivalsAndDeparturesForStopInTimeRange03() {
+
+    // Set time point predictions for stop A
+    TimepointPredictionRecord tprA = new TimepointPredictionRecord();
+    tprA.setTimepointId(stopA.getId());
+    long tprATime = createPredictedTime(time(13, 30));
+    tprA.setTimepointPredictedDepartureTime(tprATime);
+    tprA.setTripId(tripA.getId());
+
+    // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
+    List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
+        tprA));
+
+    long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, stopA.getId());
+
+    long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, stopA.getId());
+    /** 
+     * Check if the predictedDepartureTime is exactly the same with TimepointPrediction.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000,
+        predictedDepartureTimeStopA / 1000);
+    
+    long scheduledArrivalTimeForStopA = getScheduledArrivalTimeByStopId(tripA, stopA.getId());
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
+    // Remove the delay value from Stop A's predictedDepartureTime
+    long delta = (scheduledDepartureTimeForStopA - scheduledArrivalTimeForStopA);
+    /** 
+     * Check if the predictedArrivalTime is equals to (predicted departure time - 5 min deviation from Stop A)
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000 - delta,
+        predictedArrivalTimeStopA / 1000);
+
+    /**
+     * Test for Stop B
+     */
+    
+    long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, stopB.getId());
+    
+    long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, stopB.getId());
+    
+    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
+    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
+    
+    // Calculate the departure time difference from the upstream stop
+    long deltaB = (scheduledDepartureTimeForStopA - predictedDepartureTimeStopA / 1000);
+
+    /** 
+     * Check if the predictedDepartureTime is 5 min less then the scheduled departure time for stop B.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(scheduledDepartureTimeForStopB - deltaB, predictedDepartureTimeStopB / 1000);
+    
+    /** 
+     * Check if the predictedArrivalTime is 5 min less then the scheduled arrival time for stop B.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(scheduledArrivalTimeForStopB - deltaB, predictedArrivalTimeStopB / 1000);
+  }
+
+  /**
+   * This method tests upstream time point predictions with both predicted departure and arrival times.
+   * Test configuration: Time point predictions are upstream and include the current stop_id, which means 
+   * that the bus haven't passed the bus stop yet. There is only one bus stop (Stop A) which has 
+   * the real time arrival and departure times (time point prediction). In this case
+   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
+   * point prediction for particular stop's departure time, which
+   * replaces the scheduled time from GTFS for these stops.
+   * 
+   * Current time = 13:00
+   *          Schedule Arrival time  Schedule Departure time    Real-time departure time  Real-time departure time
+   * Stop A   13:30                  13:35                      13:25                     13:30    
+   * Stop B   13:45                  13:50                      -----                     -----
+   *  
+   * When requesting arrival estimate for Stop A, result should be 13:25 (predicted departure time 
+   * - 5 min deviation from Stop A) 
+   * 
+   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed 
+   * 
+   * When requesting arrival and departure estimate for Stop B, results should be 5 min less then
+   * the scheduled arrival and departure times. Since the upstream stop departures 5 min early, OBA 
+   * should remove this 5 min from the downstream estimates.
+   */
+  @Test
+  public void testGetArrivalsAndDeparturesForStopInTimeRange04() {
+    
+    // Set time point predictions for stop A
+    TimepointPredictionRecord tprA = new TimepointPredictionRecord();
+    tprA.setTimepointId(stopA.getId());
+    long tprADepartureTime = createPredictedTime(time(13, 30));
+    tprA.setTimepointPredictedDepartureTime(tprADepartureTime);
+    long tprAArrivalTime = createPredictedTime(time(13, 25));
+    tprA.setTimepointPredictedArrivalTime(tprAArrivalTime);
+    tprA.setTripId(tripA.getId());
+    
+    // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
+    List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
+        tprA));
+    
+    long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, stopA.getId());
+    
+    long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, stopA.getId());
+    /** 
+     * Check if the predictedDepartureTime is exactly the same with TimepointPrediction.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000,
+        predictedDepartureTimeStopA / 1000);
+    
+    /** 
+     * Check if the predictedArrivalTime is exactly the same with TimepointPrediction.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(tprA.getTimepointPredictedArrivalTime() / 1000,
+        predictedArrivalTimeStopA / 1000);
+    
+    /**
+     * Test for Stop B
+     */
+    
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
+    
+    long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, stopB.getId());
+    
+    long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, stopB.getId());
+    
+    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
+    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
+    
+    // Calculate the departure time difference from the upstream stop
+    long deltaB = (scheduledDepartureTimeForStopA - predictedDepartureTimeStopA / 1000);
+    
+    /** 
+     * Check if the predictedDepartureTime is 5 min less then the scheduled departure time for stop B.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(scheduledDepartureTimeForStopB - deltaB, predictedDepartureTimeStopB / 1000);
+    
+    /** 
+     * Check if the predictedArrivalTime is 5 min less then the scheduled arrival time for stop B.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(scheduledArrivalTimeForStopB - deltaB, predictedArrivalTimeStopB / 1000);
   }
   
   /**
@@ -208,31 +399,23 @@ public class ArrivalAndDepartureServiceImplTest {
    * Stop A   13:30             13:35    
    * Stop B   13:40             --- 
    * 
-   * ***********TimePointPredictions*************
-   * ***********         13:00        ***********
-   * ***********         13:20        ***********
-   * ***********     13:30 (Stop A)   ***********
-   * ***********         13:40        ***********
-   * ***********     13:50 (Stop B)   *********** <-- We are looking for here
-   * *********** 14:00 (Bus is here)  ***********
-   * 
    */
   @Test
-  public void testGetArrivalsAndDeparturesForStopInTimeRange03() {
+  public void testGetArrivalsAndDeparturesForStopInTimeRange05() {
     // Override the current time with a later time than the time point predictions
     currentTime = dateAsLong("2015-07-23 14:00");
     
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
     tprA.setTimepointId(stopA.getId());
-    long tprATime = serviceDate + time(13, 30);
+    long tprATime = createPredictedTime(time(13, 30));
     tprA.setTimepointPredictedArrivalTime(tprATime);
     tprA.setTripId(tripA.getId());
 
     // Set time point predictions for stop B
     TimepointPredictionRecord tprB = new TimepointPredictionRecord();
     tprB.setTimepointId(stopB.getId());
-    long tprBTime = serviceDate + time(13, 50);
+    long tprBTime = createPredictedTime(time(13, 50));
     tprB.setTimepointPredictedArrivalTime(tprBTime);
     tprB.setTripId(tripA.getId());
 
@@ -259,14 +442,12 @@ public class ArrivalAndDepartureServiceImplTest {
     BlockEntryImpl block = block("blockA");
 
     stopTime(0, stopA, tripA, time(13, 30), time(13, 35), 1000);
-    stopTime(1, stopB, tripA, time(13, 40), time(13, 45), 2000);
+    stopTime(1, stopB, tripA, time(13, 45), time(13, 50), 2000);
 
     BlockConfigurationEntry blockConfig = blockConfiguration(block,
         serviceIds(lsids("sA"), lsids()), tripA);
     BlockStopTimeEntry bstAA = blockConfig.getStopTimes().get(0);
     BlockStopTimeEntry bstAB = blockConfig.getStopTimes().get(1);
-
-    stopTime(2, stopA, tripA, time(13, 50), time(13, 55), 1000);
     BlockStopTimeEntry bstBA = blockConfig.getStopTimes().get(0);
 
     // Setup block location instance for trip B
@@ -291,7 +472,7 @@ public class ArrivalAndDepartureServiceImplTest {
         blockInstance.getState());
     ArrivalAndDepartureInstance in1 = new ArrivalAndDepartureInstance(sti1);
     in1.setBlockLocation(blockLocationB);
-    in1.setPredictedArrivalTime((long) (in1.getScheduledArrivalTime() + 5 * 60 * 1000));
+    in1.setPredictedArrivalTime((long) (in1.getScheduledArrivalTime()));
     in1.setPredictedDepartureTime((long) (in1.getScheduledDepartureTime()));
 
     StopTimeInstance sti2 = new StopTimeInstance(bstBA,
@@ -346,13 +527,37 @@ public class ArrivalAndDepartureServiceImplTest {
     }
     return 0;
   }
-  
-  private long getScheduledStopTimeByStopId(TripEntryImpl trip, AgencyAndId id) {
-    for (StopTimeEntry ste : trip.getStopTimes()) {
-      if (ste.getStop().getId().equals(id)) {
-        return ste.getArrivalTime() + serviceDate;
+
+  private long getPredictedDepartureTimeByStopId(
+      List<ArrivalAndDepartureInstance> arrivalsAndDepartures,
+      AgencyAndId stopId) {
+    for (ArrivalAndDepartureInstance adi : arrivalsAndDepartures) {
+      if (adi.getStop().getId().equals(stopId)) {
+        return adi.getPredictedDepartureTime();
       }
     }
     return 0;
+  }
+  
+  private long getScheduledArrivalTimeByStopId(TripEntryImpl trip, AgencyAndId id) {
+    for (StopTimeEntry ste : trip.getStopTimes()) {
+      if (ste.getStop().getId().equals(id)) {
+        return ste.getArrivalTime() + serviceDate / 1000;
+      }
+    }
+    return 0;
+  }
+
+  private long getScheduledDepartureTimeByStopId(TripEntryImpl trip, AgencyAndId id) {
+    for (StopTimeEntry ste : trip.getStopTimes()) {
+      if (ste.getStop().getId().equals(id)) {
+        return ste.getDepartureTime() + serviceDate / 1000;
+      }
+    }
+    return 0;
+  }
+  
+  private long createPredictedTime(int time) {
+    return (serviceDate / 1000 + time) * 1000;
   }
 }
