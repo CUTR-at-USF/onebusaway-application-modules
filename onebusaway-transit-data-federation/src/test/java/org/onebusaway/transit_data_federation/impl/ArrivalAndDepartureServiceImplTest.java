@@ -175,7 +175,7 @@ public class ArrivalAndDepartureServiceImplTest {
    * 
    * We are requesting arrival time for Stop B, which should be propagated downstream
    * from Stop A's prediction, which should be 13:45 (13:40 + 5 min deviation from Stop A).
-   * Stop A's predicted arrival and departure should also be the respected scheduled
+   * Stop A's predicted arrival and departure should also be the respective scheduled
    * arrival and departure plus the 5 min deviation.
    * 
    */
@@ -334,13 +334,14 @@ public class ArrivalAndDepartureServiceImplTest {
    * Stop A   13:30                  13:35                      13:20                     13:30    
    * Stop B   13:45                  13:50                      -----                     -----
    *  
-   * When requesting arrival estimate for Stop A, result should be 13:20 (predicted real-time arrival time)
+   * When requesting arrival estimate for Stop A, result should be 13:20 (predicted real-time arrival time). Note
+   * that this currently isn't support - see TODO statement in method body.
    * 
-   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed.
+   * When requesting departure estimate for Stop A, result should be 13:30 (predicted real-time departure time).
    * 
    * When requesting arrival and departure estimates for Stop B, results should be 5 min less then
-   * the scheduled arrival and departure times. Because the upstream stop departs 5 min early, OBA 
-   * should remove this 5 min from the downstream estimates.
+   * the scheduled arrival and departure times. Because the upstream Stop A departs 5 min early, OBA 
+   * should subtract this 5 min from the downstream estimates.
    */
   @Test
   public void testGetArrivalsAndDeparturesForStopInTimeRange04() {
@@ -414,6 +415,7 @@ public class ArrivalAndDepartureServiceImplTest {
      * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
      * conversions throughout OBA.
      */
+    assertEquals(TimeUnit.MINUTES.toSeconds(5), deltaB);
     assertEquals(scheduledDepartureTimeForStopB - deltaB, predictedDepartureTimeStopB / 1000);
     
     /** 
