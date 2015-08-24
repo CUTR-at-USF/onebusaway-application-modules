@@ -65,6 +65,7 @@ import org.onebusaway.transit_data_federation.services.transit_graph.StopEntry;
 import org.onebusaway.transit_data_federation.services.transit_graph.StopTimeEntry;
 import org.onebusaway.transit_data_federation.services.transit_graph.TransitGraphDao;
 import org.onebusaway.transit_data_federation.services.transit_graph.TripEntry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -572,12 +573,15 @@ public class BlockLocationServiceImpl implements BlockLocationService,
           for (BlockStopTimeEntry blockStopTime : blockConfig.getStopTimes()) {
             StopTimeEntry stopTime = blockStopTime.getStopTime();
             StopEntry stop = stopTime.getStop();
-            // StopSequence equals to -1 when there is no stop sequence in the gtfs-rt
+            // StopSequence equals to -1 when there is no stop sequence in the GTFS-rt
             if (stopId.equals(stop.getId()) && stopTime.getTrip().getId().equals(tpr.getTripId()) &&
                (tpr.getStopSequence() == -1 || stopTime.getSequence() == tpr.getStopSequence())) {
               int arrivalOrDepartureTime;
+              // We currently use the scheduled arrival time of the stop as the search index
+              // This MUST be consistent with the index search in ArrivalAndSepartureServiceImpl.getBestScheduleDeviation()
               int index = stopTime.getArrivalTime();
               if (tpr.getTimepointPredictedDepartureTime() != -1) {
+                // Prefer departure time, because if both exist departure deviations should be the ones propagated downstream
                 arrivalOrDepartureTime = stopTime.getDepartureTime();
               } else {
                 arrivalOrDepartureTime = stopTime.getArrivalTime();

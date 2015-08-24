@@ -56,6 +56,7 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests to see if the per stop time point predictions provided by
@@ -105,13 +106,17 @@ public class ArrivalAndDepartureServiceImplTest {
   }
 
   /**
-   * This method tests upstream time point predictions. Test configuration: Time
-   * point predictions are upstream and include the current stop_id, which means 
-   * that the bus haven't passed the bus stop yet. There are 2 bus stops which have 
-   * the real time arrival times (time point prediction). In this case
-   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
-   * point prediction for particular stop that was provided by the feed, which
-   * replaces the scheduled time from GTFS for these stops.
+   * This method tests time point predictions upstream of a stop for *arrival*
+   * times. 
+   * 
+   * Test configuration: Time point predictions are upstream of the 
+   * stop and include the given stop_ids, which means that the bus 
+   * hasn't passed these bus stops yet. There are 2 bus stops which 
+   * have the real time arrival times (time point predictions). In 
+   * this case getArrivalsAndDeparturesForStopInTimeRange() should 
+   * return the absolute time point prediction for particular stop 
+   * that was provided by the feed, which replaces the scheduled time 
+   * from GTFS for these stops.
    * 
    * Current time = 13:00
    *          Schedule time     Real-time from feed
@@ -145,7 +150,7 @@ public class ArrivalAndDepartureServiceImplTest {
     long predictedArrivalTime = getPredictedArrivalTimeByStopId(
         arrivalsAndDepartures, stopB.getId());
     /** 
-     * Check if the predictedArrivalTime is exactly the same with TimepointPrediction.
+     * Check if the predictedArrivalTime is exactly the same as the TimepointPrediction.
      * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
      * conversions throughout OBA.
      */
@@ -154,10 +159,11 @@ public class ArrivalAndDepartureServiceImplTest {
   }
   
   /**
-   * This method tests upstream time point predictions. Test configuration: Time
-   * point predictions are upstream of the current stop_id, which means that the
-   * bus hasn't passed the bus stop yet. There is only 1 bus stop (Stop A) which 
-   * has a real time arrival time (time point prediction). In this case
+   * This method tests upstream time point predictions for scheduled *arrival* times. 
+   * 
+   * Test configuration: Time point predictions are upstream of the current stop_id, which
+   * means that the bus hasn't passed the bus stop yet. A real time arrival time (time 
+   * point prediction) is provided for only one bus stop (Stop A).  In this case
    * getArrivalsAndDeparturesForStopInTimeRange() should calculate a new arrival time 
    * for Stop B (based on the upstream prediction for Stop A), which is the scheduled
    * arrival time + the upstream deviation.
@@ -169,6 +175,8 @@ public class ArrivalAndDepartureServiceImplTest {
    * 
    * We are requesting arrival time for Stop B, which should be propagated downstream
    * from Stop A's prediction, which should be 13:45 (13:40 + 5 min deviation from Stop A).
+   * Stop A's predicted arrival and departure should also be the respected scheduled
+   * arrival and departure plus the 5 min deviation.
    * 
    */
   @Test
@@ -185,42 +193,54 @@ public class ArrivalAndDepartureServiceImplTest {
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprA));
 
-    long predictedArrivalTime = getPredictedArrivalTimeByStopId(
+    long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, stopA.getId());
+    long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, stopA.getId());
+    long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, stopB.getId());
+    long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
         arrivalsAndDepartures, stopB.getId());
     
-    long scheduledArrivalTime = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
+    long scheduledArrivalTimeStopA = getScheduledArrivalTimeByStopId(tripA, stopA.getId());
+    long scheduledDepartureTimeStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
+    long scheduledArrivalTimeStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
+    long scheduledDepartureTimeStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
     
-    long scheduledArrivalTimeForStopA = getScheduledArrivalTimeByStopId(tripA, stopA.getId());
-    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
-    // Add the delay value from the previous stop's predictedArrivalTime
-    long delta = (scheduledDepartureTimeForStopA - scheduledArrivalTimeForStopA);
+    // The time point prediction for Stop A was 5 min late, so this should be applied to Stop B scheduled arrival
+    long delta = (predictedArrivalTimeStopA / 1000) - scheduledArrivalTimeStopA;
+    assertEquals(TimeUnit.MINUTES.toSeconds(5), delta);
     
-    // Check if the predictedArrivalTime is no same with the scheduledArrivalTime
-    assertEquals(predictedArrivalTime/1000, scheduledArrivalTime + delta);
+    // Check if the predictedArrivalTimes and predictedDepartureTimes is the same as the scheduledArrivalTime plus the delta
+    assertEquals(predictedArrivalTimeStopA / 1000, scheduledArrivalTimeStopA + delta);
+    assertEquals(predictedDepartureTimeStopA / 1000, scheduledDepartureTimeStopA + delta);
+    assertEquals(predictedArrivalTimeStopB / 1000, scheduledArrivalTimeStopB + delta);
+    assertEquals(predictedDepartureTimeStopB / 1000, scheduledDepartureTimeStopB + delta);
   }
   
   /**
-   * This method tests upstream time point predictions with only predicted departure time.
-   * Test configuration: Time point predictions are upstream and include the current stop_id, which means 
-   * that the bus haven't passed the bus stop yet. There is only one bus stop (Stop A) which has 
-   * the real time departure time (time point prediction). In this case
-   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
-   * point prediction for particular stop's departure time, which
-   * replaces the scheduled time from GTFS for these stops.
+   * This method tests upstream time point predictions with only a predicted *departure* time.
+   * 
+   * Test configuration: There is only one bus stop (Stop A) which has the real time departure time
+   * (time point prediction). In this case getArrivalsAndDeparturesForStopInTimeRange() should return 
+   * the time point prediction for Stop A's departure time, which replaces the scheduled time from GTFS
+   * for this stop.  For Stop B, the upstream departure prediction for Stop A should be propagated down
+   * to Stop B, and this deviation should be used to calculate Stop B's arrival and departure times.
    * 
    * Current time = 13:00
    *          Schedule Arrival time  Schedule Departure time  Real-time departure time
    * Stop A   13:30                  13:35                    13:30    
    * Stop B   13:45                  13:50                    ----
    *  
-   * When requesting arrival estimate for Stop A, result should be 13:25 (predicted departure time 
-   * - 5 min deviation from Stop A) 
+   * When requesting arrival estimate for Stop A, result should be 0 (note this isn't currently supported
+   * - see TODO in method body). 
    * 
-   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed (departure time)  
+   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed's
+   * departure time for Stop A.  
    * 
-   * When requesting arrival and departure estimate for Stop B, results should be 5 min less then
-   * the scheduled arrival and departure times. Since the upstream stop departures 5 min early, OBA 
-   * should remove this 5 min from the downstream estimates.
+   * When requesting arrival and departure estimate for Stop B, the result should be 5 min less then
+   * the scheduled arrival and departure times. Because the upstream stop departs 5 min early, OBA 
+   * should subtract this 5 min deviation from the downstream scheduled values.
    */
   @Test
   public void testGetArrivalsAndDeparturesForStopInTimeRange03() {
@@ -249,18 +269,23 @@ public class ArrivalAndDepartureServiceImplTest {
     assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000,
         predictedDepartureTimeStopA / 1000);
     
-    long scheduledArrivalTimeForStopA = getScheduledArrivalTimeByStopId(tripA, stopA.getId());
-    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
-    // Remove the delay value from Stop A's predictedDepartureTime
-    long delta = (scheduledDepartureTimeForStopA - scheduledArrivalTimeForStopA);
     /** 
-     * Check if the predictedArrivalTime is equals to (predicted departure time - 5 min deviation from Stop A)
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
+     * TODO - Fully support both real-time arrival and departure times for each stop in OBA
+     * 
+     * We're currently limited by OBA's internal data model which contains only one deviation per stop.
+     * By GTFS-rt spec, if no real-time arrival information is given for a stop, then the scheduled arrival
+     * should be used. In our case here, we're getting a real-time departure for Stop A (and no real-time
+     * arrival time for Stop A), but then we're showing the real-time departure info for Stop A as the 
+     * real-time arrival time for Stop A.  So, we're effectively propagating the real-time value backwards
+     * within the same stop.  The correct value for predictedArrivalTimeStopA is actually 0, because we don't
+     * have any real-time arrival information for Stop A (or upstream of Stop A).  
+     * 
+     * So, the below assertion is currently commented out, as it fails.  Future work should overhaul OBA's data 
+     * model to support more than one real-time deviation per stop.   When this is correctly implemented,
+     * the below assertion should be uncommented and it should pass.
      */
-    assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000 - delta,
-        predictedArrivalTimeStopA / 1000);
-
+    // assertEquals(0,  predictedArrivalTimeStopA);
+    
     /**
      * Test for Stop B
      */
@@ -271,6 +296,7 @@ public class ArrivalAndDepartureServiceImplTest {
     long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
         arrivalsAndDepartures, stopB.getId());
     
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
     long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
     long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
     
@@ -278,28 +304,30 @@ public class ArrivalAndDepartureServiceImplTest {
     long deltaB = (scheduledDepartureTimeForStopA - predictedDepartureTimeStopA / 1000);
 
     /** 
+     * Check if the predictedArrivalTime is 5 min less then the scheduled arrival time for stop B.
+     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
+     * conversions throughout OBA.
+     */
+    assertEquals(TimeUnit.MINUTES.toSeconds(5), deltaB);
+    assertEquals(scheduledArrivalTimeForStopB - deltaB, predictedArrivalTimeStopB / 1000);
+    
+    /** 
      * Check if the predictedDepartureTime is 5 min less then the scheduled departure time for stop B.
      * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
      * conversions throughout OBA.
      */
     assertEquals(scheduledDepartureTimeForStopB - deltaB, predictedDepartureTimeStopB / 1000);
-    
-    /** 
-     * Check if the predictedArrivalTime is 5 min less then the scheduled arrival time for stop B.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
-     */
-    assertEquals(scheduledArrivalTimeForStopB - deltaB, predictedArrivalTimeStopB / 1000);
   }
 
   /**
-   * This method tests upstream time point predictions with both predicted departure and arrival times.
+   * This method tests upstream time point predictions with both predicted arrival and departure times.
+   * 
    * Test configuration: Time point predictions are upstream and include the current stop_id, which means 
-   * that the bus haven't passed the bus stop yet. There is only one bus stop (Stop A) which has 
+   * that the bus hasn't passed the bus stop yet. There is only one bus stop (Stop A) which has 
    * the real time arrival and departure times (time point prediction). In this case
-   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
-   * point prediction for particular stop's departure time, which
-   * replaces the scheduled time from GTFS for these stops.
+   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time point prediction for Stop A's
+   * departure time, which replaces the scheduled time from GTFS for this stop.  Stop B's predictions should
+   * be derived from the upstream predictions provided for Stop A.
    * 
    * Current time = 13:00
    *          Schedule Arrival time  Schedule Departure time    Real-time arrival time  Real-time departure time
@@ -308,10 +336,10 @@ public class ArrivalAndDepartureServiceImplTest {
    *  
    * When requesting arrival estimate for Stop A, result should be 13:20 (predicted real-time arrival time)
    * 
-   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed 
+   * When requesting departure estimate for Stop A, result should be exactly same with the real-time feed.
    * 
-   * When requesting arrival and departure estimate for Stop B, results should be 5 min less then
-   * the scheduled arrival and departure times. Since the upstream stop departures 5 min early, OBA 
+   * When requesting arrival and departure estimates for Stop B, results should be 5 min less then
+   * the scheduled arrival and departure times. Because the upstream stop departs 5 min early, OBA 
    * should remove this 5 min from the downstream estimates.
    */
   @Test
@@ -342,27 +370,26 @@ public class ArrivalAndDepartureServiceImplTest {
         predictedDepartureTimeStopA / 1000);
     
     /** 
-     * Check if the predictedArrivalTime for Stop A is exactly the same with TimepointPrediction.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
+     * TODO - Fully support both real-time arrival and departure times for each stop in OBA
      * 
-     * TODO: Consider both real-time arrival and departure times for schedule deviations.
+     * We're currently limited by OBA's internal data model which contains only one deviation per stop.
+     * By GTFS-rt spec, if real-time arrival information is given for a stop, then it should be used.
+     * In our case we expect to get 13:20 as predictedArrivalTime, as this is the predicted arrival time
+     * supplied in the real-time feed. However, we are getting 13:25 as predictedArrivalTime, which is 
+     * actually the predictedDepartureTime for this stop.  This is because OBA must prefer predicted
+     * departure times to arrival times when only one deviation per stop is supported, as the departure 
+     * times are what should be propagated downstream. 
      * 
-     * Predicted arrival time should be exactly same with the real-time arrival time for stop A. In 
-     * this case we are expected to get 13:20 as predictedArrivalTime. However, we are getting 13:25 as 
-     * predictedArrivalTime. If there is both real-time arrival and departure time, then OBA uses only 
-     * the departure time for calculating schedule deviations. Since the schedule deviation is -5 min from 
-     * the real-time departure time, OBA returns <scheduled arrival time(13:30) - 5> instead of real-time 
-     * arrival time (13:20).
-     * 
-     * For this reason, the following test fails:
-     * 
-     * long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
-     *  arrivalsAndDepartures, stopA.getId());
-     *  
-     * assertEquals(tprA.getTimepointPredictedArrivalTime() / 1000,
-     *  predictedArrivalTimeStopA / 1000);
+     * So, the below assertion is currently commented out, as it fails.  Future work should overhaul OBA's 
+     * data model to support more than one real-time deviation per stop.  When this is correctly implemented,
+     * the below assertion should be uncommented and it should pass.
      */
+          
+//    long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
+//         arrivalsAndDepartures, stopA.getId());
+//       
+//    assertEquals(tprA.getTimepointPredictedArrivalTime() / 1000,
+//       predictedArrivalTimeStopA / 1000);
     
     /**
      * Test for Stop B
@@ -400,11 +427,12 @@ public class ArrivalAndDepartureServiceImplTest {
   /**
    * This method tests a request for an arrival time for a stop, when the current time
    * is greater than the arrival time prediction for that stop (Stop B). In other words, 
-   * the bus is predicted to have already passed the stop (Stop B).  Test configuration: 
-   * There are 2 bus stops which have the real time arrival times (time point prediction)
-   *  - Stop A and B. In this case getArrivalsAndDeparturesForStopInTimeRange() should 
-   *  return last received absolute time point prediction for particular stop we're 
-   *  requesting information for (Stop B).
+   * the bus is predicted to have already passed the stop (Stop B).  
+   * 
+   * Test configuration: There are 2 bus stops which have the real time arrival times 
+   * (time point prediction) - Stop A and B. In this case 
+   * getArrivalsAndDeparturesForStopInTimeRange() should return last received absolute 
+   * time point prediction for particular stop we're requesting information for (Stop B).
    * 
    * Current time = 14:00
    *          Schedule time     Real-time from feed
@@ -447,10 +475,11 @@ public class ArrivalAndDepartureServiceImplTest {
   }
   
   /**
-   * This method make tests the upstream propagation isn't happening. Test configuration: Time
-   * point predictions are downstream and include the current stop_id, which means 
-   * that the bus already passed the bus stop. There only one bus stop (stop B) which have 
-   * the real time arrival times (time point prediction). In this case
+   * This method tests to make sure upstream propagation isn't happening. 
+   * 
+   * Test configuration: Time point predictions are downstream and include the current 
+   * stop_id, which means that the bus already passed the bus stop. There only one bus 
+   * stop (stop B) which have the real time arrival times (time point prediction). In this case
    * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
    * point prediction for particular stop (stop B) that was provided by the feed, which
    * replaces the scheduled time from GTFS for these stops.
@@ -501,7 +530,13 @@ public class ArrivalAndDepartureServiceImplTest {
     assertEquals(0, predictedArrivalTimeA);
   }
   
-  public List<ArrivalAndDepartureInstance> getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(
+  /**
+   * Set up the BlockLocationServiceImpl for the test, using the given timepointPredictions
+   * @param timepointPredictions real-time predictions to apply to the BlockLocationServiceImpl
+   * @return a list of ArrivalAndDepartureInstances which is used to access predicted arrival/departure
+   * times for a stop, for comparison against the expected values
+   */
+  private List<ArrivalAndDepartureInstance> getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(
       List<TimepointPredictionRecord> timepointPredictions) {
     TargetTime target = new TargetTime(currentTime, currentTime);
 

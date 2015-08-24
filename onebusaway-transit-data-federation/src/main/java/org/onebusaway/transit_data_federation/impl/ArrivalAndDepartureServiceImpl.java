@@ -652,13 +652,29 @@ class ArrivalAndDepartureServiceImpl implements ArrivalAndDepartureService {
     }
   }
 
+  /**
+   * Returns the best schedule deviation for this stop, given the scheduleDeviations
+   * stored in blockLocation.  {@link TransitInterpolationLibrary} is used to find
+   * the best deviation, which interpolates/extrapolates values consistent with the 
+   * GTFS-realtime spec (https://developers.google.com/transit/gtfs-realtime/) when
+   * using the {@link EInRangeStrategy.PREVIOUS_VALUE} and {@link EOutOfRangeStrategy.LAST_VALUE}
+   * strategies.  null is returned if no real-time deviations were found and the scheduled 
+   * arrival time should be used.
+   * @param instance
+   * @param blockLocation
+   * @return the best deviation for this stop, or null if no real-time deviations were found
+   * and the scheduled arrival time should be used.
+   */
   private Double getBestScheduleDeviation(ArrivalAndDepartureInstance instance,
       BlockLocation blockLocation) {
 
     ScheduleDeviationSamples scheduleDeviations = blockLocation.getScheduleDeviations();
 
     if (scheduleDeviations != null && !scheduleDeviations.isEmpty()) {
+      // We currently use the scheduled arrival time of the stop as the search index
+      // This MUST be consistent with the index set in BlockLocationServiceImpl.getBlockLocation()
       Integer arrivalTime = instance.getBlockStopTime().getStopTime().getArrivalTime();
+      // Determine which real-time deviation should be used for this stop, if any
       return TransitInterpolationLibrary.interpolate(
           scheduleDeviations.getScheduleTimes(),
           scheduleDeviations.getScheduleDeviationMus(), arrivalTime,
