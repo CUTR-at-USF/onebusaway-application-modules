@@ -151,11 +151,8 @@ public class ArrivalAndDepartureServiceImplTest {
         arrivalsAndDepartures, stopB.getId());
     /** 
      * Check if the predictedArrivalTime is exactly the same as the TimepointPrediction.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(tprB.getTimepointPredictedArrivalTime() / 1000,
-        predictedArrivalTime / 1000);
+    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTime);
   }
   
   /**
@@ -208,14 +205,14 @@ public class ArrivalAndDepartureServiceImplTest {
     long scheduledDepartureTimeStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
     
     // The time point prediction for Stop A was 5 min late, so this should be applied to Stop B scheduled arrival
-    long delta = (predictedArrivalTimeStopA / 1000) - scheduledArrivalTimeStopA;
+    long delta = TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopA) - scheduledArrivalTimeStopA;
     assertEquals(TimeUnit.MINUTES.toSeconds(5), delta);
     
     // Check if the predictedArrivalTimes and predictedDepartureTimes is the same as the scheduledArrivalTime plus the delta
-    assertEquals(predictedArrivalTimeStopA / 1000, scheduledArrivalTimeStopA + delta);
-    assertEquals(predictedDepartureTimeStopA / 1000, scheduledDepartureTimeStopA + delta);
-    assertEquals(predictedArrivalTimeStopB / 1000, scheduledArrivalTimeStopB + delta);
-    assertEquals(predictedDepartureTimeStopB / 1000, scheduledDepartureTimeStopB + delta);
+    assertEquals(TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopA), scheduledArrivalTimeStopA + delta);
+    assertEquals(TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopA), scheduledDepartureTimeStopA + delta);
+    assertEquals(TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopB), scheduledArrivalTimeStopB + delta);
+    assertEquals(TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopB), scheduledDepartureTimeStopB + delta);
   }
   
   /**
@@ -263,11 +260,8 @@ public class ArrivalAndDepartureServiceImplTest {
         arrivalsAndDepartures, stopA.getId());
     /** 
      * Check if the predictedDepartureTime is exactly the same with TimepointPrediction.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000,
-        predictedDepartureTimeStopA / 1000);
+    assertEquals(tprA.getTimepointPredictedDepartureTime(), predictedDepartureTimeStopA);
     
     /** 
      * TODO - Fully support both real-time arrival and departure times for each stop in OBA
@@ -301,22 +295,18 @@ public class ArrivalAndDepartureServiceImplTest {
     long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
     
     // Calculate the departure time difference from the upstream stop
-    long deltaB = (scheduledDepartureTimeForStopA - predictedDepartureTimeStopA / 1000);
+    long deltaB = (scheduledDepartureTimeForStopA - TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopA));
 
     /** 
      * Check if the predictedArrivalTime is 5 min less then the scheduled arrival time for stop B.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
     assertEquals(TimeUnit.MINUTES.toSeconds(5), deltaB);
-    assertEquals(scheduledArrivalTimeForStopB - deltaB, predictedArrivalTimeStopB / 1000);
+    assertEquals(scheduledArrivalTimeForStopB - deltaB, TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopB));
     
     /** 
      * Check if the predictedDepartureTime is 5 min less then the scheduled departure time for stop B.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(scheduledDepartureTimeForStopB - deltaB, predictedDepartureTimeStopB / 1000);
+    assertEquals(scheduledDepartureTimeForStopB - deltaB, TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopB));
   }
 
   /**
@@ -364,11 +354,8 @@ public class ArrivalAndDepartureServiceImplTest {
         arrivalsAndDepartures, stopA.getId());
     /** 
      * Check if the predictedDepartureTime is exactly the same with TimepointPrediction.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(tprA.getTimepointPredictedDepartureTime() / 1000,
-        predictedDepartureTimeStopA / 1000);
+    assertEquals(tprA.getTimepointPredictedDepartureTime(), predictedDepartureTimeStopA);
     
     /** 
      * TODO - Fully support both real-time arrival and departure times for each stop in OBA
@@ -389,8 +376,8 @@ public class ArrivalAndDepartureServiceImplTest {
 //    long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
 //         arrivalsAndDepartures, stopA.getId());
 //       
-//    assertEquals(tprA.getTimepointPredictedArrivalTime() / 1000,
-//       predictedArrivalTimeStopA / 1000);
+//    assertEquals(TimeUnit.MILLISECONDS.toSeconds(tprA.getTimepointPredictedArrivalTime()),
+//       TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopA));
     
     /**
      * Test for Stop B
@@ -408,22 +395,18 @@ public class ArrivalAndDepartureServiceImplTest {
     long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
     
     // Calculate the departure time difference from the upstream stop
-    long deltaB = (scheduledDepartureTimeForStopA - predictedDepartureTimeStopA / 1000);
+    long deltaB = scheduledDepartureTimeForStopA - TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopA);
     
     /** 
      * Check if the predictedDepartureTime is 5 min less then the scheduled departure time for stop B.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
     assertEquals(TimeUnit.MINUTES.toSeconds(5), deltaB);
-    assertEquals(scheduledDepartureTimeForStopB - deltaB, predictedDepartureTimeStopB / 1000);
+    assertEquals(scheduledDepartureTimeForStopB - deltaB, TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopB));
     
     /** 
      * Check if the predictedArrivalTime is 5 min less then the scheduled arrival time for stop B.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(scheduledArrivalTimeForStopB - deltaB, predictedArrivalTimeStopB / 1000);
+    assertEquals(scheduledArrivalTimeForStopB - deltaB, TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopB));
   }
   
   /**
@@ -469,11 +452,8 @@ public class ArrivalAndDepartureServiceImplTest {
         arrivalsAndDepartures, stopB.getId());
     /** 
      * Check if the predictedArrivalTime is exactly the same with TimepointPrediction.
-     * We remove milliseconds with "/ 1000" to remove any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(tprB.getTimepointPredictedArrivalTime() / 1000,
-        predictedArrivalTime / 1000);
+    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTime);
   }
   
   /**
@@ -514,11 +494,8 @@ public class ArrivalAndDepartureServiceImplTest {
         arrivalsAndDepartures, stopB.getId());
     /** 
      * Check if the predictedArrivalTime for stop B is exactly the same with TimepointPrediction.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
-    assertEquals(tprB.getTimepointPredictedArrivalTime() / 1000,
-        predictedArrivalTime / 1000);
+    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTime);
 
     long predictedArrivalTimeA = getPredictedArrivalTimeByStopId(
         arrivalsAndDepartures, stopA.getId());
@@ -526,8 +503,6 @@ public class ArrivalAndDepartureServiceImplTest {
     /** 
      * Check if the predictedArrivalTime for stop A is equals to 0.
      * So, we try to make sure that there is no upstream predictions happening.
-     * We remove milliseconds with "/ 1000" to avoid any rounding errors due to time
-     * conversions throughout OBA.
      */
     assertEquals(0, predictedArrivalTimeA);
   }
