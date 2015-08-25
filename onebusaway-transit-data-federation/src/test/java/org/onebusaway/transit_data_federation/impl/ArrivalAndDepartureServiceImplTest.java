@@ -416,13 +416,13 @@ public class ArrivalAndDepartureServiceImplTest {
    * 
    * Test configuration: There are 2 bus stops which have the real time arrival times 
    * (time point predictions) - Stop A and B. In this case 
-   * getArrivalsAndDeparturesForStopInTimeRange() should return last received absolute 
-   * time point prediction for particular stop we're requesting information for (Stop B).
+   * getArrivalsAndDeparturesForStopInTimeRange() should return last received 
+   * time point prediction for particular stop we're requesting information for.
    * 
    * Current time = 14:00
    *          Schedule time     Real-time from feed
-   * Stop A   13:30             13:35    
-   * Stop B   13:40             --- 
+   * Stop A   13:30             13:30    
+   * Stop B   13:40             13:50
    * 
    */
   @Test
@@ -448,31 +448,55 @@ public class ArrivalAndDepartureServiceImplTest {
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprA, tprB));
 
-    long predictedArrivalTime = getPredictedArrivalTimeByStopId(
+    long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
+        arrivalsAndDepartures, mStopA.getId());
+    long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
         arrivalsAndDepartures, mStopB.getId());
+    
     /** 
-     * Check if the predictedArrivalTime is exactly the same with TimepointPrediction.
+     * Check if the predictedArrivalTime is exactly the same as TimepointPrediction
+     * for both stops
      */
-    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTime);
+    assertEquals(tprA.getTimepointPredictedArrivalTime(), predictedArrivalTimeStopA);
+    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTimeStopB);
+    
+    /** 
+     * Check if the predictedDepartureTimes and scheduledDepartureTimes have the same delta 
+     * as arrival predictions and scheduled arrival times for both stops
+     */
+    long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, mStopA.getId());
+    long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, mStopB.getId());
+    
+    long scheduledArrivalTimeForStopA = getScheduledArrivalTimeByStopId(mTripA, mStopA.getId());
+    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(mTripA, mStopB.getId());
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(mTripA, mStopA.getId());
+    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(mTripA, mStopB.getId());
+    
+    long deltaA = TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopA) - scheduledArrivalTimeForStopA;    
+    assertEquals(scheduledDepartureTimeForStopA + deltaA, TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopA));
+    
+    long deltaB = TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopB) - scheduledArrivalTimeForStopB;
+    assertEquals(scheduledDepartureTimeForStopB + deltaB, TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopB));
   }
   
   /**
    * This method tests to make sure upstream propagation isn't happening. 
    * 
-   * Test configuration: Time point predictions are downstream and include the current 
-   * stop_id, which means that the bus already passed the bus stop. There only one bus 
-   * stop (stop B) which have the real time arrival times (time point prediction). In this case
-   * getArrivalsAndDeparturesForStopInTimeRange() should return absolute time
-   * point prediction for particular stop (stop B) that was provided by the feed, which
-   * replaces the scheduled time from GTFS for these stops.
+   * Test configuration: Time point predictions are downstream of Stop A, which means that the 
+   * bus is predicted to have already passed the bus stop. There only one bus 
+   * stop (Stop B) which has a real time arrival time (time point prediction). In this case
+   * getArrivalsAndDeparturesForStopInTimeRange() for Stop A should return a predicted arrival
+   * time = 0, indicating that no real-time information is available for Stop A.
    * 
    * Current time = 14:00
    *          Schedule time     Real-time from feed
    * Stop A   13:30             -----    
    * Stop B   13:45             13:40
    *  
-   * Since the bus already passed the bus stop A, OBA shouldn't propagate arrival 
-   * estimate for stop A.
+   * Since the bus already passed the bus stop A, and no real-time information is available
+   * for Stop A, OBA should NOT propagate arrival estimate for Stop B upstream to Stop A. 
    */
   @Test
   public void testGetArrivalsAndDeparturesForStopInTimeRange06() {
@@ -490,20 +514,32 @@ public class ArrivalAndDepartureServiceImplTest {
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprB));
 
-    long predictedArrivalTime = getPredictedArrivalTimeByStopId(
+    long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
         arrivalsAndDepartures, mStopB.getId());
     /** 
-     * Check if the predictedArrivalTime for stop B is exactly the same with TimepointPrediction.
+     * Check if the predictedArrivalTime for stop B is exactly the same as TimepointPredictionRecord.
      */
-    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTime);
+    assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTimeStopB);
+    
+    /**
+     * Check predicted departure for Stop B too, to make sure its propagated from provided predicted 
+     * arrival time
+     */
+    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(mTripA, mStopB.getId());
+    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(mTripA, mStopB.getId());
+    long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
+        arrivalsAndDepartures, mStopB.getId());
+    long deltaB = TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopB) - scheduledArrivalTimeForStopB;
+    assertEquals(scheduledDepartureTimeForStopB + deltaB, TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopB));
+    
+    /** 
+     * Make sure the predictedArrivalTime for stop A is equals to 0 - in other words,
+     * we should show no real-time information for this stop and use the scheduled
+     * time instead.
+     */
 
     long predictedArrivalTimeA = getPredictedArrivalTimeByStopId(
         arrivalsAndDepartures, mStopA.getId());
-    
-    /** 
-     * Check if the predictedArrivalTime for stop A is equals to 0.
-     * So, we try to make sure that there is no upstream predictions happening.
-     */
     assertEquals(0, predictedArrivalTimeA);
   }
   
@@ -593,7 +629,11 @@ public class ArrivalAndDepartureServiceImplTest {
     return _service.getArrivalsAndDeparturesForStopInTimeRange(mStopB, target,
         stopTimeFrom, stopTimeTo);
   }
-
+  
+  //
+  // Helper methods
+  //
+  
   private long getPredictedArrivalTimeByStopId(
       List<ArrivalAndDepartureInstance> arrivalsAndDepartures,
       AgencyAndId stopId) {
