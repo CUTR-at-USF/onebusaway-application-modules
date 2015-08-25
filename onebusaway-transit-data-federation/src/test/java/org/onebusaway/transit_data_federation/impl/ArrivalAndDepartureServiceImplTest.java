@@ -79,16 +79,16 @@ public class ArrivalAndDepartureServiceImplTest {
   private BlockLocationServiceImpl _blockLocationService;
 
   // Setup current time
-  private long currentTime = dateAsLong("2015-07-23 13:00");
+  private long mCurrentTime = dateAsLong("2015-07-23 13:00");
 
-  private long serviceDate = dateAsLong("2015-07-23 00:00");
+  private long mServiceDate = dateAsLong("2015-07-23 00:00");
 
   // Stops
-  private StopEntryImpl stopA = stop("stopA", 47.0, -122.0);
+  private StopEntryImpl mStopA = stop("stopA", 47.0, -122.0);
 
-  private StopEntryImpl stopB = stop("stopB", 47.0, -128.0);
+  private StopEntryImpl mStopB = stop("stopB", 47.0, -128.0);
 
-  private TripEntryImpl tripA = trip("tripA", "sA", 3000);
+  private TripEntryImpl mTripA = trip("tripA", "sA", 3000);
 
   @Before
   public void setup() {
@@ -131,24 +131,24 @@ public class ArrivalAndDepartureServiceImplTest {
 
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
-    tprA.setTimepointId(stopA.getId());
+    tprA.setTimepointId(mStopA.getId());
     long tprATime = createPredictedTime(time(13, 30));
     tprA.setTimepointPredictedArrivalTime(tprATime);
-    tprA.setTripId(tripA.getId());
+    tprA.setTripId(mTripA.getId());
 
     // Set time point predictions for stop B
     TimepointPredictionRecord tprB = new TimepointPredictionRecord();
-    tprB.setTimepointId(stopB.getId());
+    tprB.setTimepointId(mStopB.getId());
     long tprBTime = createPredictedTime(time(13, 50));
     tprB.setTimepointPredictedArrivalTime(tprBTime);
-    tprB.setTripId(tripA.getId());
+    tprB.setTripId(mTripA.getId());
 
     // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprA, tprB));
 
     long predictedArrivalTime = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     /** 
      * Check if the predictedArrivalTime is exactly the same as the TimepointPrediction.
      */
@@ -181,28 +181,28 @@ public class ArrivalAndDepartureServiceImplTest {
 
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
-    tprA.setTimepointId(stopA.getId());
+    tprA.setTimepointId(mStopA.getId());
     long tprATime = createPredictedTime(time(13, 35));
     tprA.setTimepointPredictedArrivalTime(tprATime);
-    tprA.setTripId(tripA.getId());
+    tprA.setTripId(mTripA.getId());
 
     // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprA));
 
     long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopA.getId());
+        arrivalsAndDepartures, mStopA.getId());
     long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
-        arrivalsAndDepartures, stopA.getId());
+        arrivalsAndDepartures, mStopA.getId());
     long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     
-    long scheduledArrivalTimeStopA = getScheduledArrivalTimeByStopId(tripA, stopA.getId());
-    long scheduledDepartureTimeStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
-    long scheduledArrivalTimeStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
-    long scheduledDepartureTimeStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
+    long scheduledArrivalTimeStopA = getScheduledArrivalTimeByStopId(mTripA, mStopA.getId());
+    long scheduledDepartureTimeStopA = getScheduledDepartureTimeByStopId(mTripA, mStopA.getId());
+    long scheduledArrivalTimeStopB = getScheduledArrivalTimeByStopId(mTripA, mStopB.getId());
+    long scheduledDepartureTimeStopB = getScheduledDepartureTimeByStopId(mTripA, mStopB.getId());
     
     // The time point prediction for Stop A was 5 min late, so this should be applied to Stop B scheduled arrival
     long delta = TimeUnit.MILLISECONDS.toSeconds(predictedArrivalTimeStopA) - scheduledArrivalTimeStopA;
@@ -244,20 +244,20 @@ public class ArrivalAndDepartureServiceImplTest {
 
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
-    tprA.setTimepointId(stopA.getId());
+    tprA.setTimepointId(mStopA.getId());
     long tprATime = createPredictedTime(time(13, 30));
     tprA.setTimepointPredictedDepartureTime(tprATime);
-    tprA.setTripId(tripA.getId());
+    tprA.setTripId(mTripA.getId());
 
     // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprA));
 
     long predictedArrivalTimeStopA = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopA.getId());
+        arrivalsAndDepartures, mStopA.getId());
 
     long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
-        arrivalsAndDepartures, stopA.getId());
+        arrivalsAndDepartures, mStopA.getId());
     /** 
      * Check if the predictedDepartureTime is exactly the same with TimepointPrediction.
      */
@@ -285,14 +285,14 @@ public class ArrivalAndDepartureServiceImplTest {
      */
     
     long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     
     long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     
-    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
-    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
-    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(mTripA, mStopA.getId());
+    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(mTripA, mStopB.getId());
+    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(mTripA, mStopB.getId());
     
     // Calculate the departure time difference from the upstream stop
     long deltaB = (scheduledDepartureTimeForStopA - TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopA));
@@ -338,12 +338,12 @@ public class ArrivalAndDepartureServiceImplTest {
     
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
-    tprA.setTimepointId(stopA.getId());
+    tprA.setTimepointId(mStopA.getId());
     long tprADepartureTime = createPredictedTime(time(13, 30));
     tprA.setTimepointPredictedDepartureTime(tprADepartureTime);
     long tprAArrivalTime = createPredictedTime(time(13, 20));
     tprA.setTimepointPredictedArrivalTime(tprAArrivalTime);
-    tprA.setTripId(tripA.getId());
+    tprA.setTripId(mTripA.getId());
     
     // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
@@ -351,7 +351,7 @@ public class ArrivalAndDepartureServiceImplTest {
     
     
     long predictedDepartureTimeStopA = getPredictedDepartureTimeByStopId(
-        arrivalsAndDepartures, stopA.getId());
+        arrivalsAndDepartures, mStopA.getId());
     /** 
      * Check if the predictedDepartureTime is exactly the same with TimepointPrediction.
      */
@@ -383,16 +383,16 @@ public class ArrivalAndDepartureServiceImplTest {
      * Test for Stop B
      */
     
-    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(tripA, stopA.getId());
+    long scheduledDepartureTimeForStopA = getScheduledDepartureTimeByStopId(mTripA, mStopA.getId());
     
     long predictedArrivalTimeStopB = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     
     long predictedDepartureTimeStopB = getPredictedDepartureTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     
-    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(tripA, stopB.getId());
-    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(tripA, stopB.getId());
+    long scheduledArrivalTimeForStopB = getScheduledArrivalTimeByStopId(mTripA, mStopB.getId());
+    long scheduledDepartureTimeForStopB = getScheduledDepartureTimeByStopId(mTripA, mStopB.getId());
     
     // Calculate the departure time difference from the upstream stop
     long deltaB = scheduledDepartureTimeForStopA - TimeUnit.MILLISECONDS.toSeconds(predictedDepartureTimeStopA);
@@ -415,7 +415,7 @@ public class ArrivalAndDepartureServiceImplTest {
    * the bus is predicted to have already passed the stop (Stop B).  
    * 
    * Test configuration: There are 2 bus stops which have the real time arrival times 
-   * (time point prediction) - Stop A and B. In this case 
+   * (time point predictions) - Stop A and B. In this case 
    * getArrivalsAndDeparturesForStopInTimeRange() should return last received absolute 
    * time point prediction for particular stop we're requesting information for (Stop B).
    * 
@@ -428,28 +428,28 @@ public class ArrivalAndDepartureServiceImplTest {
   @Test
   public void testGetArrivalsAndDeparturesForStopInTimeRange05() {
     // Override the current time with a later time than the time point predictions
-    currentTime = dateAsLong("2015-07-23 14:00");
+    mCurrentTime = dateAsLong("2015-07-23 14:00");
     
     // Set time point predictions for stop A
     TimepointPredictionRecord tprA = new TimepointPredictionRecord();
-    tprA.setTimepointId(stopA.getId());
+    tprA.setTimepointId(mStopA.getId());
     long tprATime = createPredictedTime(time(13, 30));
     tprA.setTimepointPredictedArrivalTime(tprATime);
-    tprA.setTripId(tripA.getId());
+    tprA.setTripId(mTripA.getId());
 
     // Set time point predictions for stop B
     TimepointPredictionRecord tprB = new TimepointPredictionRecord();
-    tprB.setTimepointId(stopB.getId());
+    tprB.setTimepointId(mStopB.getId());
     long tprBTime = createPredictedTime(time(13, 50));
     tprB.setTimepointPredictedArrivalTime(tprBTime);
-    tprB.setTripId(tripA.getId());
+    tprB.setTripId(mTripA.getId());
 
     // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprA, tprB));
 
     long predictedArrivalTime = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     /** 
      * Check if the predictedArrivalTime is exactly the same with TimepointPrediction.
      */
@@ -477,28 +477,28 @@ public class ArrivalAndDepartureServiceImplTest {
   @Test
   public void testGetArrivalsAndDeparturesForStopInTimeRange06() {
     // Override the current time with a later time than the time point predictions
-    currentTime = dateAsLong("2015-07-23 14:00");
+    mCurrentTime = dateAsLong("2015-07-23 14:00");
 
     // Set time point predictions for stop B
     TimepointPredictionRecord tprB = new TimepointPredictionRecord();
-    tprB.setTimepointId(stopB.getId());
+    tprB.setTimepointId(mStopB.getId());
     long tprBTime = createPredictedTime(time(13, 40));
     tprB.setTimepointPredictedArrivalTime(tprBTime);
-    tprB.setTripId(tripA.getId());
+    tprB.setTripId(mTripA.getId());
 
     // Call ArrivalsAndDeparturesForStopInTimeRange method in ArrivalAndDepartureServiceImpl
     List<ArrivalAndDepartureInstance> arrivalsAndDepartures = getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(Arrays.asList(
         tprB));
 
     long predictedArrivalTime = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopB.getId());
+        arrivalsAndDepartures, mStopB.getId());
     /** 
      * Check if the predictedArrivalTime for stop B is exactly the same with TimepointPrediction.
      */
     assertEquals(tprB.getTimepointPredictedArrivalTime(), predictedArrivalTime);
 
     long predictedArrivalTimeA = getPredictedArrivalTimeByStopId(
-        arrivalsAndDepartures, stopA.getId());
+        arrivalsAndDepartures, mStopA.getId());
     
     /** 
      * Check if the predictedArrivalTime for stop A is equals to 0.
@@ -515,22 +515,22 @@ public class ArrivalAndDepartureServiceImplTest {
    */
   private List<ArrivalAndDepartureInstance> getArrivalsAndDeparturesForStopInTimeRangeByTimepointPredictionRecord(
       List<TimepointPredictionRecord> timepointPredictions) {
-    TargetTime target = new TargetTime(currentTime, currentTime);
+    TargetTime target = new TargetTime(mCurrentTime, mCurrentTime);
 
     // Setup block
     BlockEntryImpl block = block("blockA");
 
-    stopTime(0, stopA, tripA, time(13, 30), time(13, 35), 1000);
-    stopTime(1, stopB, tripA, time(13, 45), time(13, 50), 2000);
+    stopTime(0, mStopA, mTripA, time(13, 30), time(13, 35), 1000);
+    stopTime(1, mStopB, mTripA, time(13, 45), time(13, 50), 2000);
 
     BlockConfigurationEntry blockConfig = blockConfiguration(block,
-        serviceIds(lsids("sA"), lsids()), tripA);
+        serviceIds(lsids("sA"), lsids()), mTripA);
     BlockStopTimeEntry bstAA = blockConfig.getStopTimes().get(0);
     BlockStopTimeEntry bstAB = blockConfig.getStopTimes().get(1);
     BlockStopTimeEntry bstBA = blockConfig.getStopTimes().get(0);
 
     // Setup block location instance for trip B
-    BlockInstance blockInstance = new BlockInstance(blockConfig, serviceDate);
+    BlockInstance blockInstance = new BlockInstance(blockConfig, mServiceDate);
     BlockLocation blockLocationB = new BlockLocation();
     blockLocationB.setActiveTrip(bstBA.getTrip());
     blockLocationB.setBlockInstance(blockInstance);
@@ -565,7 +565,7 @@ public class ArrivalAndDepartureServiceImplTest {
         + _blockStatusService.getRunningEarlyWindow() * 1000);
 
     Mockito.when(
-        _stopTimeService.getStopTimeInstancesInTimeRange(stopB,
+        _stopTimeService.getStopTimeInstancesInTimeRange(mStopB,
             fromTimeBuffered, toTimeBuffered,
             EFrequencyStopTimeBehavior.INCLUDE_UNSPECIFIED)).thenReturn(
         Arrays.asList(sti1, sti2));
@@ -574,9 +574,9 @@ public class ArrivalAndDepartureServiceImplTest {
     VehicleLocationRecordCacheImpl _cache = new VehicleLocationRecordCacheImpl();
     VehicleLocationRecord vlr = new VehicleLocationRecord();
     vlr.setBlockId(blockLocationB.getBlockInstance().getBlock().getBlock().getId());
-    vlr.setTripId(tripA.getId());
+    vlr.setTripId(mTripA.getId());
     vlr.setTimepointPredictions(blockLocationB.getTimepointPredictions());
-    vlr.setTimeOfRecord(currentTime);
+    vlr.setTimeOfRecord(mCurrentTime);
     vlr.setVehicleId(new AgencyAndId("1", "123"));
 
     // Create ScheduledBlockLocation for cache
@@ -590,7 +590,7 @@ public class ArrivalAndDepartureServiceImplTest {
     _blockLocationService.setScheduledBlockLocationService(scheduledBlockLocationServiceImpl);
 
     // Call ArrivalAndDepartureService
-    return _service.getArrivalsAndDeparturesForStopInTimeRange(stopB, target,
+    return _service.getArrivalsAndDeparturesForStopInTimeRange(mStopB, target,
         stopTimeFrom, stopTimeTo);
   }
 
@@ -619,7 +619,7 @@ public class ArrivalAndDepartureServiceImplTest {
   private long getScheduledArrivalTimeByStopId(TripEntryImpl trip, AgencyAndId id) {
     for (StopTimeEntry ste : trip.getStopTimes()) {
       if (ste.getStop().getId().equals(id)) {
-        return ste.getArrivalTime() + serviceDate / 1000;
+        return ste.getArrivalTime() + mServiceDate / 1000;
       }
     }
     return 0;
@@ -628,13 +628,13 @@ public class ArrivalAndDepartureServiceImplTest {
   private long getScheduledDepartureTimeByStopId(TripEntryImpl trip, AgencyAndId id) {
     for (StopTimeEntry ste : trip.getStopTimes()) {
       if (ste.getStop().getId().equals(id)) {
-        return ste.getDepartureTime() + serviceDate / 1000;
+        return ste.getDepartureTime() + mServiceDate / 1000;
       }
     }
     return 0;
   }
   
   private long createPredictedTime(int time) {
-    return (serviceDate / 1000 + time) * 1000;
+    return (mServiceDate / 1000 + time) * 1000;
   }
 }
