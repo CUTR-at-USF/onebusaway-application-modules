@@ -607,8 +607,6 @@ public class ArrivalAndDepartureServiceImplTest {
     // Create ScheduledBlockLocation for cache
     ScheduledBlockLocation sbl = new ScheduledBlockLocation();
     sbl.setActiveTrip(blockLocationB.getActiveTrip());
-    sbl.setClosestStop(bstAA);
-    sbl.setNextStop(bstAB);
 
     // Add data to cache
     _cache.addRecord(blockInstance, vlr, sbl, null);
